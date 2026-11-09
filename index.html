@@ -80,7 +80,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .seg { display: inline-flex; background: var(--sunk); border-radius: 10px; padding: 4px; gap: 2px; max-width: 100%; overflow-x: auto; }
 .seg button { font: inherit; font-weight: 600; border: 0; border-radius: 7px; padding: 8px 12px; background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
-.radios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.radios { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .radios input { position: absolute; opacity: 0; pointer-events: none; }
 .radios label { display: block; text-align: center; padding: 9px 4px; cursor: pointer; color: var(--ink); background: var(--bg); font-weight: 500; font-size: 14px; }
 .radios label + input + label { border-left: 1px solid var(--line); }
@@ -173,7 +173,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
 <header class="top"><div class="wrap">
   <div class="brand">
     <h1>EV <span>Charging</span> Log</h1>
-    <p class="sub" id="ruleLine">Public charging: business covers up to £20 a day · Home charging: £10 a day</p>
+    <p class="sub" id="ruleLine">Home-charged day: £10 flat · Public day: business covers up to £20</p>
   </div>
   <nav class="nav" role="tablist" aria-label="Sections">
     <button role="tab" type="button" data-tab="dashboard" aria-selected="true">Dashboard</button>
@@ -229,11 +229,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
       <div class="scroll"><table id="depotTable"></table></div>
     </article>
     <article class="block">
-      <div class="block-head"><h3>By van</h3><span class="meta">Miles come from the mileage readings: the gap between one charge and the van's previous charge.</span></div>
-      <div class="scroll"><table id="vanTable"></table></div>
-    </article>
-    <article class="block">
-      <div class="block-head"><h3>By charge point or network</h3><span class="meta">Cheapest per kWh first.</span></div>
+      <div class="block-head"><h3>By charge point or network</h3><span class="meta">Most spent first.</span></div>
       <div class="scroll"><table id="networkTable"></table></div>
     </article>
     <article class="block" id="weekBlock" hidden>
@@ -250,34 +246,36 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   <section class="panel" id="tab-log" hidden>
     <div class="cols">
       <div class="side">
+        <section class="card form" aria-labelledby="homeTitle">
+          <div class="row2">
+            <label for="fDate">Date<input type="date" id="fDate" required></label>
+            <div class="datenav" style="align-self:end"><button class="iconbtn" type="button" id="logPrev" aria-label="Previous day">‹</button><button class="iconbtn" type="button" id="logNext" aria-label="Next day">›</button></div>
+          </div>
+          <h2 id="homeTitle" style="font-size:21px">Who home-charged?</h2>
+          <p class="note" id="homeNote">Tick each driver who charged at home on this date.</p>
+          <div class="homelist" id="homeList"></div>
+          <div class="actions"><button class="btn primary" type="button" id="saveHome">Save home charging</button></div>
+          <p class="msg" id="homeMsg" role="status"></p>
+        </section>
+
         <section class="card" aria-labelledby="formTitle">
           <form id="chargeForm" class="form" novalidate>
-            <h2 id="formTitle" style="font-size:21px">Log a charge</h2>
-            <div class="row2">
-              <label for="fDate">Date<input type="date" id="fDate" required></label>
-              <label for="fDriver">Driver<select id="fDriver" required></select></label>
-            </div>
+            <h2 id="formTitle" style="font-size:21px">Log a public or on-route charge</h2>
+            <label for="fDriver">Driver<select id="fDriver" required></select></label>
             <div>
               <span class="eyebrow">Charging method</span>
               <div class="radios" role="radiogroup" aria-label="Charging method" style="margin-top:4px">
-                <input type="radio" name="method" id="mHome" value="home"><label for="mHome">Home</label>
                 <input type="radio" name="method" id="mPublic" value="public" checked><label for="mPublic">Public</label>
                 <input type="radio" name="method" id="mRoute" value="onroute"><label for="mRoute">On route</label>
               </div>
             </div>
+            <label for="fPoint">Charge point / network<input type="text" id="fPoint" list="dlPoints" autocomplete="off" placeholder="e.g. Instavolt, Leicester Forest"></label>
             <div class="row2">
-              <label for="fVan">Van reg<input type="text" id="fVan" list="dlVans" autocomplete="off" placeholder="e.g. AB24 CDE" required></label>
-              <label for="fPoint">Charge point / network<input type="text" id="fPoint" list="dlPoints" autocomplete="off" placeholder="e.g. Instavolt, Leicester Forest"></label>
-            </div>
-            <div class="row2">
-              <label for="fKwh">kWh<input type="number" id="fKwh" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 42.5"></label>
               <label for="fCost">Cost (£)<input type="number" id="fCost" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 31.20"></label>
+              <label for="fMiles">Mileage<input type="number" id="fMiles" min="0" step="1" inputmode="numeric" placeholder="odometer"></label>
             </div>
-            <div class="row2">
-              <label for="fMiles">Mileage (odometer)<input type="number" id="fMiles" min="0" step="1" inputmode="numeric" placeholder="e.g. 18450"></label>
-              <label for="fNote">Note<input type="text" id="fNote" autocomplete="off" placeholder="e.g. receipt no."></label>
-            </div>
-            <div class="preview" id="preview" aria-live="polite">Pick a driver to see how the allowance works out for the day.</div>
+            <label for="fNote">Note<input type="text" id="fNote" autocomplete="off" placeholder="optional, e.g. receipt no."></label>
+            <div class="preview" id="preview" aria-live="polite">Pick a driver to see how the day works out.</div>
             <div class="actions">
               <button class="btn primary" type="submit" id="saveBtn" style="flex:1">Save charge</button>
               <button class="btn" type="button" id="cancelEdit" hidden>Cancel edit</button>
@@ -285,26 +283,17 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
             <p class="msg" id="formMsg" role="status"></p>
           </form>
         </section>
-
-        <section class="card form" aria-labelledby="homeTitle">
-          <h2 id="homeTitle" style="font-size:21px">Home-charging days</h2>
-          <p class="note" id="homeNote">Tick each home-charging driver who worked on this date. Each ticked day earns the flat home allowance, whatever they used. You don't need kWh or cost for these.</p>
-          <div class="homelist" id="homeList"></div>
-          <div class="actions"><button class="btn primary" type="button" id="saveHome">Save home days</button></div>
-          <p class="msg" id="homeMsg" role="status"></p>
-        </section>
-        <datalist id="dlVans"></datalist><datalist id="dlPoints"></datalist>
+        <datalist id="dlPoints"></datalist>
       </div>
 
       <div class="stack">
         <article class="block">
-          <div class="block-head"><h3 id="logDayTitle">Charges on this day</h3>
-            <div class="datenav"><button class="iconbtn" type="button" id="logPrev" aria-label="Previous day">‹</button><button class="iconbtn" type="button" id="logNext" aria-label="Next day">›</button></div></div>
-          <div class="scroll"><table id="logTable"></table></div>
+          <div class="block-head"><h3>Allowance for this day</h3><span class="meta">Worked out per driver from all of the day's charging.</span></div>
+          <div class="scroll"><table id="logDayDrivers"></table></div>
         </article>
         <article class="block">
-          <div class="block-head"><h3>Allowance for this day</h3><span class="meta">Worked out per driver from all of the day's charges.</span></div>
-          <div class="scroll"><table id="logDayDrivers"></table></div>
+          <div class="block-head"><h3 id="logDayTitle">Charges on this day</h3></div>
+          <div class="scroll"><table id="logTable"></table></div>
         </article>
       </div>
     </div>
@@ -329,7 +318,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     <article class="block">
       <div class="block-head"><h3>Per driver for this pay period</h3><span class="meta" id="wMeta"></span></div>
       <div class="scroll"><table id="wTable"></table></div>
-      <div class="block-foot"><p class="note">“Off wages” is charging spend over the daily allowance. “Home allowance” is the flat amount for each home-charging day. Net to wages = home allowance minus deductions. Week columns show deductions only.</p></div>
+      <div class="block-foot"><p class="note">“Off wages” is everything the driver pays back: on a home-charged day, all other charging; on a public day, anything over the daily credit. Week columns show deductions only.</p></div>
     </article>
     <article class="block">
       <div class="block-head"><h3>Every day with a deduction</h3><span class="meta">The workings behind each deduction.</span></div>
@@ -338,8 +327,8 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     <div class="card">
       <h2>Getting these figures into wages and the P&amp;L</h2>
       <div class="note" style="display:grid;gap:6px;margin-top:6px">
-        <p><b>Driver Pay Log:</b> “Download for Driver Pay Log” gives one line per driver per day: deductions as <i>Fuel over allowance</i> (a charge off pay) and, if you pay the home allowance through wages, home days as <i>Top up</i>. Add them under “Add a charge or payment”. Driver names here must match the names in the pay log.</p>
-        <p><b>P&amp;L Tracker:</b> “Download for P&amp;L” gives the cost to the business for each FD for each day. Put it in the <i>Charging £</i> box on the P&amp;L's daily entry. It already takes off what drivers pay back and includes the home allowance, so don't count the home allowance again in wages on the P&amp;L.</p>
+        <p><b>Driver Pay Log:</b> “Download for Driver Pay Log” gives one line per driver per day with a deduction, as <i>Fuel over allowance</i> (a charge off pay). If you pay the home allowance through wages, home-charged days come through as <i>Top up</i>. Driver names here must match the names in the pay log.</p>
+        <p><b>P&amp;L Tracker:</b> “Download for P&amp;L” gives the cost to the business for each driver for each day (£10 on a home-charged day, up to £20 on a public day). Put it in the <i>Charging £</i> box on the P&amp;L's daily entry.</p>
       </div>
     </div>
   </section>
@@ -362,8 +351,12 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     </div>
     <section class="tiles" id="aTiles" aria-label="Averages"></section>
     <article class="block">
-      <div class="block-head"><h3>Average per driver</h3><span class="meta">Per day = per day they charged or had a home day.</span></div>
+      <div class="block-head"><h3>Average per driver</h3><span class="meta">Per day = per day they charged.</span></div>
       <div class="scroll"><table id="aDriver"></table></div>
+    </article>
+    <article class="block">
+      <div class="block-head"><h3>Home-charged days against public days</h3><span class="meta">Which costs the business less, and what drivers pay back on each.</span></div>
+      <div class="scroll"><table id="aType"></table></div>
     </article>
     <article class="block">
       <div class="block-head"><h3>Average per depot</h3></div>
@@ -372,14 +365,6 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     <article class="block">
       <div class="block-head"><h3>Average per charging method</h3></div>
       <div class="scroll"><table id="aMethod"></table></div>
-    </article>
-    <article class="block">
-      <div class="block-head"><h3>Average per driver type</h3><span class="meta">Is the home allowance or the public cap cheaper for the business?</span></div>
-      <div class="scroll"><table id="aType"></table></div>
-    </article>
-    <article class="block">
-      <div class="block-head"><h3>Average per van</h3></div>
-      <div class="scroll"><table id="aVan"></table></div>
     </article>
     <article class="block">
       <div class="block-head"><h3>Pay period by pay period</h3><span class="meta">Spot the trend.</span></div>
@@ -408,14 +393,11 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   <section class="panel" id="tab-settings" hidden>
     <div class="card">
       <h2>Drivers</h2>
-      <p class="note">Set each driver as home-charging or public-charging. That decides which allowance they get. Use the same name as in the Driver Pay Log, and the FD number from the P&amp;L.</p>
+      <p class="note">Use the same name as in the Driver Pay Log, so the wage figures line up.</p>
       <div class="scroll" style="margin-top:10px"><table id="drvList"></table></div>
       <form id="drvForm" class="formgrid" style="margin-top:14px" novalidate>
         <label for="dName">Driver name *<input type="text" id="dName" autocomplete="off" placeholder="e.g. Jamie Clarke"></label>
-        <label for="dType">Charges at *<select id="dType"><option value="public">Public charging (£20 cap)</option><option value="home">Home (£10 a day)</option></select></label>
         <label for="dDepot">Depot *<select id="dDepot"></select></label>
-        <label for="dFd">FD number <span class="opt">(for the P&amp;L)</span><input type="text" id="dFd" autocomplete="off" placeholder="e.g. FD1234"></label>
-        <label for="dVan">Usual van reg<input type="text" id="dVan" autocomplete="off" placeholder="e.g. AB24 CDE"></label>
         <label class="check" for="dActive"><input type="checkbox" id="dActive" checked> Active</label>
         <div class="actions" style="align-self:end">
           <button class="btn primary" type="submit" id="dSubmit">Add driver</button>
@@ -429,25 +411,14 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
       <h2>Allowance rules and pay period</h2>
       <form id="rulesForm" class="form" style="margin-top:10px" novalidate>
         <div class="formgrid">
-          <label for="rCap">Public charging: business covers up to (£ a day)<input type="number" id="rCap" min="0" step="0.01" inputmode="decimal"></label>
-          <label for="rHome">Home charging: flat allowance (£ a day)<input type="number" id="rHome" min="0" step="0.01" inputmode="decimal"></label>
-          <label for="rTariff">Home electricity price (£ per kWh)<input type="number" id="rTariff" min="0" step="0.001" inputmode="decimal"></label>
+          <label for="rHome">Home-charged day: flat allowance (£)<input type="number" id="rHome" min="0" step="0.01" inputmode="decimal"></label>
+          <label for="rCap">Public day: business covers up to (£)<input type="number" id="rCap" min="0" step="0.01" inputmode="decimal"></label>
           <label for="rStart">First day of a 4-week pay period<input type="date" id="rStart"></label>
-        </div>
-        <label for="rRoute">When a home-charging driver has to charge on route, who pays?
-          <select id="rRoute">
-            <option value="cap">Same as public charging: business covers on-route charging up to the daily cap, the driver pays the rest. Home allowance still paid.</option>
-            <option value="capLess">Business covers on-route charging up to the daily cap minus the home allowance, the driver pays the rest. Home allowance still paid.</option>
-            <option value="business">The business pays all on-route charging. Home allowance still paid.</option>
-            <option value="driver">The driver pays all on-route charging (taken off wages). Home allowance still paid.</option>
-          </select>
-        </label>
-        <div class="formgrid">
           <label for="rDepots">Depots <span class="opt">(separate with commas)</span><input type="text" id="rDepots" autocomplete="off"></label>
-          <label class="check" for="rPayHome"><input type="checkbox" id="rPayHome"> Pay the home allowance through wages</label>
         </div>
+        <label class="check" for="rPayHome"><input type="checkbox" id="rPayHome"> Pay the home allowance through wages</label>
         <div class="rulebox" id="ruleSummary"></div>
-        <p class="note">The home electricity price only estimates what home charging costs when no cost is typed in, so you can compare it with the allowance. New rules apply to charges you log after saving. Charges already logged keep the rules they were saved with.</p>
+        <p class="note">New amounts apply to charging you log after saving. Charging already logged keeps the amounts it was saved with.</p>
         <div class="actions"><button class="btn primary" type="submit" id="saveRules">Save rules</button></div>
         <p class="msg" id="rMsg" role="status"></p>
       </form>
@@ -460,14 +431,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   "use strict";
   const DAY = 864e5;
   const METHODS = { home: "Home", public: "Public", onroute: "On route" };
-  const TYPES = { home: "Home charging", public: "Public charging" };
-  const RULES = {
-    cap: "same as public charging: business covers on-route charging up to the daily cap, the driver pays the rest",
-    capLess: "business covers on-route charging up to the cap minus the home allowance, the driver pays the rest",
-    business: "the business pays all on-route charging",
-    driver: "the driver pays all on-route charging",
-  };
-  const DEFAULT_SETTINGS = { publicCap: 20, homeAllowance: 10, homeTariff: 0.25, onRouteRule: "cap", payHomeViaWages: true, periodStart: "2026-11-02", depots: ["Raunds", "Glenfield"] };
+  const DEFAULT_SETTINGS = { publicCap: 20, homeAllowance: 10, payHomeViaWages: true, periodStart: "2026-11-02", depots: ["Raunds", "Glenfield"] };
   const $ = (id) => document.getElementById(id);
 
   // ---------- dates and money ----------
@@ -484,19 +448,15 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   const money = (v) => gbp.format(r2(v));
   const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
   const has = (v) => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
-  const kwhF = (v) => (Math.round(v * 10) / 10).toLocaleString("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  const per = (a, b, f) => (b > 0 ? f(a / b) : "–");
-  const pKwh = (v) => "£" + v.toFixed(3);
   const pct = (v) => (Number.isFinite(v) ? Math.round(v * 100) + "%" : "–");
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const normReg = (v) => String(v || "").toUpperCase().replace(/\s+/g, " ").trim();
   const mod = (a, b) => ((a % b) + b) % b;
 
   // ---------- state ----------
   const S = {
     settings: { ...DEFAULT_SETTINGS }, drivers: [], driversLoaded: false,
     charges: [], chargesLoaded: false, day: [], dayLoaded: false,
-    db: null, dl: null, canWrite: true, local: false,
+    db: null, dl: null, canWrite: true,
   };
   const ui = { tab: "dashboard", view: "period", date: todayS(), scope: "ALL", logDate: todayS(), editing: null, editingDriver: null, avgN: 1, eScope: "ALL" };
   try { const v = localStorage.getItem("ev-view"); if (v === "day" || v === "week" || v === "period") ui.view = v; } catch (_) {}
@@ -504,7 +464,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
 
   const driverById = (id) => S.drivers.find((d) => d.id === id);
   const sortDrivers = (list) => list.slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const typeChip = (t) => `<span class="chip ${t === "home" ? "home" : "public"}">${t === "home" ? "Home" : "Public"}</span>`;
+  const dayChip = (home) => `<span class="chip ${home ? "home" : "public"}">${home ? "Home day" : "Public day"}</span>`;
   const methodChip = (m) => `<span class="chip ${esc(m)}">${esc(METHODS[m] || m)}</span>`;
   const setMsg = (el, text, kind) => { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); };
   const writeErr = (err) => (err && err.code === "quota_exceeded" ? "The log is full. Download old periods and delete them to make room." : "Couldn't save. Check your connection and try again.");
@@ -521,7 +481,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     const anchor = S.settings.periodStart || DEFAULT_SETTINGS.periodStart;
     const off = Math.round((toT(s) - toT(anchor)) / DAY);
     const p = Math.floor(off / 28);
-    return { no: p, start: addDays(anchor, p * 28), end: addDays(anchor, p * 28 + 27), week: Math.floor(mod(off, 28) / 7) + 1, weekStart: addDays(anchor, Math.floor(off / 7) * 7) };
+    return { start: addDays(anchor, p * 28), end: addDays(anchor, p * 28 + 27), week: Math.floor(mod(off, 28) / 7) + 1, weekStart: addDays(anchor, Math.floor(off / 7) * 7) };
   }
   function rangeFor(view, s) {
     const p = periodInfo(s);
@@ -530,138 +490,112 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     return [p.start, p.end];
   }
   const periodLabel = (p) => `${shortD(p.start)} – ${fmt(p.end, { day: "numeric", month: "short", year: "numeric" })}`;
-  function avgRange() {
-    const p = periodInfo(ui.date);
-    return [addDays(p.start, -28 * (ui.avgN - 1)), p.end];
-  }
+  function avgRange() { const p = periodInfo(ui.date); return [addDays(p.start, -28 * (ui.avgN - 1)), p.end]; }
 
   // ---------- the allowance maths ----------
-  // Every charge is enriched with what the business covers, what comes off wages and any home allowance.
-  // Rules are worked out per driver per day from all of that day's charges, using the rules saved on the day's charges.
+  // Worked out per driver per day from all of that day's charging:
+  //  - home-charged that day: flat home allowance; every other charge that day is paid back by the driver in full.
+  //  - no home charge that day: the business covers public / on-route charging up to the daily cap; the rest is paid back.
+  // Each day uses the amounts saved on its charges, so changing the rules later doesn't change past days.
   function enrich(list) {
-    const tariff = num(S.settings.homeTariff);
-    const out = list.map((c) => {
-      const e = { ...c, kwh: num(c.kwh), van: normReg(c.van) };
-      if (has(c.cost)) { e.spend = num(c.cost); e.est = false; }
-      else if (c.method === "home" && num(c.kwh) > 0) { e.spend = num(c.kwh) * tariff; e.est = true; }
-      else { e.spend = 0; e.est = false; }
-      e.covered = 0; e.ded = 0; e.allow = 0; e.miles = 0;
-      return e;
-    });
-    // miles since the van's previous mileage reading
-    const byVan = new Map();
-    for (const e of out) if (e.van && has(e.mileage)) { if (!byVan.has(e.van)) byVan.set(e.van, []); byVan.get(e.van).push(e); }
-    for (const arr of byVan.values()) {
+    const out = list.map((c) => ({ ...c, spend: c.method === "home" ? 0 : num(c.cost), covered: 0, ded: 0, allow: 0, miles: 0 }));
+    // miles since the driver's previous mileage reading
+    const byDrv = new Map();
+    for (const e of out) if (has(e.mileage)) { if (!byDrv.has(e.driverId)) byDrv.set(e.driverId, []); byDrv.get(e.driverId).push(e); }
+    for (const arr of byDrv.values()) {
       arr.sort((a, b) => a.date.localeCompare(b.date) || num(a.mileage) - num(b.mileage));
-      for (let i = 1; i < arr.length; i++) {
-        const d = num(arr[i].mileage) - num(arr[i - 1].mileage);
-        if (d > 0 && d < 2000) arr[i].miles = d;
-      }
+      for (let i = 1; i < arr.length; i++) { const d = num(arr[i].mileage) - num(arr[i - 1].mileage); if (d > 0 && d < 2000) arr[i].miles = d; }
     }
-    const days = dayGroups(out);
-    return { charges: out, days };
+    return { charges: out, days: dayGroups(out) };
   }
 
   function dayGroups(enriched) {
     const map = new Map();
-    for (const e of enriched) {
-      const k = e.driverId + "|" + e.date;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(e);
-    }
+    for (const e of enriched) { const k = e.driverId + "|" + e.date; if (!map.has(k)) map.set(k, []); map.get(k).push(e); }
     const days = [];
     for (const list of map.values()) {
       list.sort((a, b) => String(a.savedAt || "").localeCompare(String(b.savedAt || "")));
       const first = list[0];
       const drv = driverById(first.driverId);
-      const type = first.driverType || (drv && drv.type) || "public";
-      const cap = has(first.cap) ? num(first.cap) : num(S.settings.publicCap);
-      const allowanceRate = has(first.allowance) ? num(first.allowance) : num(S.settings.homeAllowance);
-      const rule = first.rule || S.settings.onRouteRule || "cap";
+      const homeEntry = list.find((e) => e.method === "home");
+      const ref = homeEntry || first;
+      const cap = has(ref.cap) ? num(ref.cap) : num(S.settings.publicCap);
+      const allowanceRate = has(ref.allowance) ? num(ref.allowance) : num(S.settings.homeAllowance);
       const paid = list.filter((e) => e.method !== "home");
-      const spendBiz = paid.reduce((s, e) => s + e.spend, 0);
-      let covered = 0, allowance = 0;
-      if (type === "public") covered = Math.min(spendBiz, cap);
-      else {
-        allowance = allowanceRate;
-        if (rule === "business") covered = spendBiz;
-        else if (rule === "capLess") covered = Math.min(spendBiz, Math.max(0, cap - allowanceRate));
-        else if (rule === "driver") covered = 0;
-        else covered = Math.min(spendBiz, cap);
-      }
-      covered = r2(covered);
-      const ded = r2(spendBiz - covered);
-      // share the covered amount and the deduction across the paid charges, the allowance onto a home charge
-      for (const e of paid) { const sh = spendBiz > 0 ? e.spend / spendBiz : 0; e.covered = covered * sh; e.ded = ded * sh; }
-      if (allowance) (list.find((e) => e.method === "home") || first).allow = allowance;
+      const spend = r2(paid.reduce((s, e) => s + e.spend, 0));
+      const home = !!homeEntry;
+      const allowance = home ? allowanceRate : 0;
+      const covered = home ? 0 : r2(Math.min(spend, cap));
+      const ded = r2(spend - covered);
+      for (const e of paid) { const sh = spend > 0 ? e.spend / spend : 0; e.covered = covered * sh; e.ded = ded * sh; }
+      if (homeEntry) homeEntry.allow = allowance;
       days.push({
         driverId: first.driverId, name: (drv && drv.name) || first.driver || "Removed driver", depot: first.depot || (drv && drv.depot) || "",
-        fd: (drv && drv.fd) || "", date: first.date, type, cap, rule, charges: list,
-        spend: list.reduce((s, e) => s + e.spend, 0), spendBiz, homeSpend: list.filter((e) => e.method === "home").reduce((s, e) => s + e.spend, 0),
-        kwh: list.reduce((s, e) => s + e.kwh, 0), covered, ded, allowance, biz: covered + allowance,
-        hasRoute: list.some((e) => e.method === "onroute"),
+        date: first.date, home, cap, allowanceRate, charges: list, n: paid.length, spend, covered, ded, allowance, biz: covered + allowance,
       });
     }
     return days;
   }
 
-  function agg(charges) {
-    const t = { n: 0, kwh: 0, spend: 0, covered: 0, ded: 0, allow: 0, biz: 0, miles: 0, milesSpend: 0, milesKwh: 0, pricedKwh: 0, pricedSpend: 0, est: 0 };
-    const days = new Set(), drivers = new Set();
-    for (const e of charges) {
-      if (e.method !== "home" || e.kwh > 0 || has(e.cost)) t.n++;
-      t.kwh += e.kwh; t.spend += e.spend; t.covered += e.covered; t.ded += e.ded; t.allow += e.allow;
-      if (e.est) t.est++;
-      if (e.kwh > 0 && e.spend > 0) { t.pricedKwh += e.kwh; t.pricedSpend += e.spend; }
-      if (e.miles > 0) { t.miles += e.miles; t.milesSpend += e.spend; t.milesKwh += e.kwh; }
-      days.add(e.driverId + "|" + e.date); drivers.add(e.driverId);
+  // Totals for a set of driver-days.
+  function aggDays(days) {
+    const t = { days: days.length, homeDays: 0, publicDays: 0, overDays: 0, n: 0, spend: 0, covered: 0, ded: 0, allow: 0, biz: 0, drivers: new Set(days.map((d) => d.driverId)).size };
+    for (const d of days) {
+      t.n += d.n; t.spend += d.spend; t.covered += d.covered; t.ded += d.ded; t.allow += d.allowance; t.biz += d.biz;
+      if (d.home) t.homeDays++; else t.publicDays++;
+      if (!d.home && d.ded > 0.004) t.overDays++;
+    }
+    return t;
+  }
+  // Totals for a set of charges (for method / network breakdowns).
+  function aggCharges(list) {
+    const t = { n: 0, spend: 0, covered: 0, ded: 0, allow: 0, miles: 0, milesSpend: 0 };
+    for (const e of list) {
+      if (e.method !== "home") t.n++;
+      t.spend += e.spend; t.covered += e.covered; t.ded += e.ded; t.allow += e.allow;
+      if (e.miles > 0) { t.miles += e.miles; t.milesSpend += e.spend + e.allow; }
     }
     t.biz = t.covered + t.allow;
-    t.days = days.size; t.drivers = drivers.size;
-    t.perKwh = t.pricedKwh > 0 ? t.pricedSpend / t.pricedKwh : NaN;
-    t.perMile = t.miles > 0 ? t.milesSpend / t.miles : NaN;
-    t.milesPerKwh = t.milesKwh > 0 ? t.miles / t.milesKwh : NaN;
     return t;
   }
   const inRange = (a, b) => (e) => e.date >= a && e.date <= b;
 
-  function scopeFilter(scope) {
-    if (scope === "ALL") return () => true;
+  // The scope filter works on driver-days (driver, depot) or on charges (method).
+  function scopeDays(scope, days) {
+    if (scope === "ALL" || scope.startsWith("M:")) return days;
     const v = scope.slice(2);
-    if (scope.startsWith("D:")) return (e) => e.depot === v;
-    if (scope.startsWith("M:")) return (e) => e.method === v;
-    if (scope.startsWith("V:")) return (e) => e.van === v;
-    return (e) => e.driverId === v;
+    if (scope.startsWith("D:")) return days.filter((d) => d.depot === v);
+    return days.filter((d) => d.driverId === v);
+  }
+  function scopeCharges(scope, charges) {
+    if (scope === "ALL") return charges;
+    const v = scope.slice(2);
+    if (scope.startsWith("D:")) return charges.filter((e) => e.depot === v);
+    if (scope.startsWith("M:")) return charges.filter((e) => e.method === v);
+    return charges.filter((e) => e.driverId === v);
   }
   function scopeName(scope) {
     if (scope === "ALL") return "All drivers";
     const v = scope.slice(2);
     if (scope.startsWith("D:")) return v + " depot";
     if (scope.startsWith("M:")) return METHODS[v] + " charging";
-    if (scope.startsWith("V:")) return "Van " + v;
     const d = driverById(v); return d ? d.name : "Driver";
   }
   function fillScope(sel, value) {
-    const depots = S.settings.depots || [];
     let html = `<option value="ALL">All drivers</option>`;
-    html += `<optgroup label="Depots">${depots.map((d) => `<option value="D:${esc(d)}">${esc(d)} depot</option>`).join("")}</optgroup>`;
+    html += `<optgroup label="Depots">${(S.settings.depots || []).map((d) => `<option value="D:${esc(d)}">${esc(d)} depot</option>`).join("")}</optgroup>`;
     html += `<optgroup label="Charging method">${Object.entries(METHODS).map(([k, l]) => `<option value="M:${k}">${l} charging</option>`).join("")}</optgroup>`;
     const drv = sortDrivers(S.drivers);
     if (drv.length) html += `<optgroup label="Drivers">${drv.map((d) => `<option value="T:${esc(d.id)}">${esc(d.name)}${d.active === false ? " (inactive)" : ""}</option>`).join("")}</optgroup>`;
-    if (value && value.startsWith("V:")) html += `<optgroup label="Van"><option value="${esc(value)}">Van ${esc(value.slice(2))}</option></optgroup>`;
-    sel.innerHTML = html;
-    sel.value = value;
-    if (sel.value !== value) sel.value = "ALL";
+    sel.innerHTML = html; sel.value = value; if (sel.value !== value) sel.value = "ALL";
   }
 
   // ---------- tables ----------
-  const HEAD = `<th>Charges</th><th>kWh</th><th>Spend</th><th>£ / kWh</th><th>Business covers</th><th>Home allowance</th><th>Off wages</th><th>Cost to business</th><th>Miles</th><th>£ / mile</th>`;
-  const cells = (t) => `<td>${t.n}</td><td>${kwhF(t.kwh)}</td><td>${money(t.spend)}</td><td>${Number.isFinite(t.perKwh) ? pKwh(t.perKwh) : "–"}</td>` +
-    `<td>${money(t.covered)}</td><td>${money(t.allow)}</td><td class="${t.ded > 0.004 ? "neg" : ""}">${money(t.ded)}</td><td><b>${money(t.biz)}</b></td>` +
-    `<td>${t.miles ? Math.round(t.miles).toLocaleString("en-GB") : "–"}</td><td>${Number.isFinite(t.perMile) ? money(t.perMile) : "–"}</td>`;
-  const COLS = 10;
-
-  function emptyTbody(cols, text) { return `<tbody><tr><td class="l" colspan="${cols}">${text}</td></tr></tbody>`; }
+  const DHEAD = `<th>Home days</th><th>Public days</th><th>Charges</th><th>Spend</th><th>Home allowance</th><th>Business covers</th><th>Off wages</th><th>Cost to business</th>`;
+  const dcells = (t) => `<td>${t.homeDays || "–"}</td><td>${t.publicDays || "–"}</td><td>${t.n}</td><td>${money(t.spend)}</td><td>${money(t.allow)}</td><td>${money(t.covered)}</td>` +
+    `<td class="${t.ded > 0.004 ? "neg" : ""}">${money(t.ded)}</td><td><b>${money(t.biz)}</b></td>`;
+  const emptyTbody = (cols, text) => `<tbody><tr><td class="l" colspan="${cols}">${text}</td></tr></tbody>`;
+  const loadingText = () => (S.db && !S.chargesLoaded ? "Loading…" : "Nothing logged in these dates.");
 
   // ============================================================ DASHBOARD
   function renderDashboard() {
@@ -678,115 +612,114 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
 
     const noDrivers = S.driversLoaded && !S.drivers.length;
     $("dashEmpty").hidden = !noDrivers;
-    if (noDrivers) $("dashEmpty").innerHTML = `<div class="block empty"><h3>Set up your drivers first</h3><ol>
-      <li>Open <b>Drivers &amp; rules</b> and add each driver, saying whether they charge at home or on public chargers.</li>
-      <li>Check the allowance rules and the first day of a pay period.</li>
-      <li>Use <b>Log charges</b> for every charge, and tick home-charging days.</li></ol></div>`;
+    if (noDrivers) $("dashEmpty").innerHTML = `<div class="block empty"><h3>Add your drivers first</h3><ol>
+      <li>Open <b>Drivers &amp; rules</b> and add each driver with their depot.</li>
+      <li>Check the allowance amounts and the first day of a pay period.</li>
+      <li>Each day, use <b>Log charges</b>: tick who home-charged, and log every public or on-route charge.</li></ol></div>`;
 
     const { charges, days } = enrich(S.charges);
-    const all = charges.filter(inRange(a, b));
-    const sf = scopeFilter(ui.scope);
-    const scoped = all.filter(sf);
-    const t = agg(scoped);
+    const allDays = days.filter(inRange(a, b));
+    const allCharges = charges.filter(inRange(a, b));
+    const sDays = scopeDays(ui.scope, allDays);
+    const sCharges = scopeCharges(ui.scope, allCharges);
+    const methodScope = ui.scope.startsWith("M:");
+    const t = aggDays(sDays);
+    const c = aggCharges(sCharges);
     const loading = S.db && !S.chargesLoaded;
-    const dayList = days.filter(inRange(a, b));
-    const overDays = dayList.filter((d) => d.ded > 0.004 && scoped.some((e) => e.driverId === d.driverId && e.date === d.date)).length;
     const tile = (cls, label, value, note) => `<div class="tile ${cls}"><span class="eyebrow">${label}</span><b>${loading ? "…" : value}</b>${note ? `<small>${note}</small>` : ""}</div>`;
-    $("kpis").innerHTML = [
-      tile("main", "Cost to business", money(t.biz), "Covered charging plus home allowances"),
-      tile("", "Charging spend", money(t.spend), t.est ? `${t.est} home charge${t.est === 1 ? "" : "s"} estimated` : "All charges, all methods"),
-      tile("minus", "Off drivers' wages", money(t.ded), `${overDays} driver-day${overDays === 1 ? "" : "s"} over the cap`),
-      tile("", "Home allowances", money(t.allow), ""),
-      tile("", "Energy", `${kwhF(t.kwh)} kWh`, `${t.n} charge${t.n === 1 ? "" : "s"}`),
-      tile("", "Average price", Number.isFinite(t.perKwh) ? pKwh(t.perKwh) : "–", "per kWh, where cost and kWh were both logged"),
-      tile("", "Cost per mile", Number.isFinite(t.perMile) ? money(t.perMile) : "–", Number.isFinite(t.milesPerKwh) ? `${t.milesPerKwh.toFixed(2)} miles per kWh` : "Log mileage to see this"),
-      tile("", "Average per driver-day", t.days ? money(t.biz / t.days) : "–", `cost to business over ${t.days} driver-day${t.days === 1 ? "" : "s"}`),
-    ].join("");
+    const pubSpend = sDays.filter((d) => !d.home).reduce((s, d) => s + d.spend, 0);
+    $("kpis").innerHTML = (methodScope ? [
+      tile("main", "Cost to business", money(c.biz), `${METHODS[ui.scope.slice(2)]} charging only`),
+      tile("", "Charging spend", money(c.spend), `${c.n} charge${c.n === 1 ? "" : "s"}`),
+      tile("minus", "Off drivers' wages", money(c.ded), ""),
+      tile("", "Per charge", c.n ? money(c.spend / c.n) : "–", ""),
+    ] : [
+      tile("main", "Cost to business", money(t.biz), "Home allowances plus public charging covered"),
+      tile("", "Charging spend", money(t.spend), `${t.n} public / on-route charge${t.n === 1 ? "" : "s"}`),
+      tile("minus", "Off drivers' wages", money(t.ded), `${t.overDays} public day${t.overDays === 1 ? "" : "s"} over ${money(S.settings.publicCap)}`),
+      tile("", "Home allowances", money(t.allow), `${t.homeDays} home-charged day${t.homeDays === 1 ? "" : "s"}`),
+      tile("", "Public days", String(t.publicDays), t.publicDays ? `${money(pubSpend / t.publicDays)} spent per public day` : ""),
+      tile("", "Per driver-day", t.days ? money(t.biz / t.days) : "–", `cost to business over ${t.days} driver-day${t.days === 1 ? "" : "s"}`),
+      tile("", "Per charge", t.n ? money(t.spend / t.n) : "–", "average public / on-route charge"),
+      tile("", "Cost per mile", c.miles ? money(c.milesSpend / c.miles) : "–", c.miles ? `${Math.round(c.miles).toLocaleString("en-GB")} miles` : "Log mileage to see this"),
+    ]).join("");
 
     // drivers
-    const ids = new Set(all.map((e) => e.driverId));
+    const ids = new Set(allDays.map((d) => d.driverId));
     let drv = S.drivers.filter((d) => d.active !== false || ids.has(d.id));
-    if (ui.scope.startsWith("D:")) drv = drv.filter((d) => d.depot === ui.scope.slice(2) || all.some((e) => e.driverId === d.id && sf(e)));
+    if (ui.scope.startsWith("D:")) drv = drv.filter((d) => d.depot === ui.scope.slice(2) || sDays.some((x) => x.driverId === d.id));
     drv = sortDrivers(drv);
-    for (const id of ids) if (!driverById(id)) drv.push({ id, name: (all.find((e) => e.driverId === id) || {}).driver || "Removed driver", type: "public", depot: "" });
-    const dHead = `<thead><tr><th class="l">Driver</th><th class="l">Type</th><th class="l">Depot</th><th>Days</th>${HEAD}<th>Per day</th></tr></thead>`;
-    const scopeAll = ui.scope.startsWith("M:") || ui.scope.startsWith("V:") ? all.filter(sf) : all;
+    for (const id of ids) if (!driverById(id) && (!ui.scope.startsWith("D:") || sDays.some((x) => x.driverId === id))) drv.push({ id, name: (allDays.find((d) => d.driverId === id) || {}).name || "Removed driver", depot: "" });
+    const dBase = ui.scope.startsWith("T:") ? allDays : sDays;
     const dRows = drv.map((d) => {
-      const dt = agg(scopeAll.filter((e) => e.driverId === d.id));
-      return `<tr class="click${ui.scope === "T:" + d.id ? " sel" : ""}${dt.days ? "" : " dim"}" data-scope="T:${esc(d.id)}"><td class="l name">${esc(d.name)}</td><td class="l">${typeChip(d.type)}</td><td class="l">${esc(d.depot)}</td><td>${dt.days}</td>${cells(dt)}<td>${dt.days ? money(dt.biz / dt.days) : "–"}</td></tr>`;
+      const dt = aggDays(dBase.filter((x) => x.driverId === d.id));
+      return `<tr class="click${ui.scope === "T:" + d.id ? " sel" : ""}${dt.days ? "" : " dim"}" data-scope="T:${esc(d.id)}"><td class="l name">${esc(d.name)}</td><td class="l">${esc(d.depot)}</td><td>${dt.overDays || "–"}</td>${dcells(dt)}<td>${dt.days ? money(dt.biz / dt.days) : "–"}</td></tr>`;
     }).join("");
-    const dt = agg(scopeAll);
-    $("driverTable").innerHTML = dHead + (dRows ? `<tbody>${dRows}</tbody><tfoot><tr><td class="l">Total</td><td></td><td></td><td>${dt.days}</td>${cells(dt)}<td>${dt.days ? money(dt.biz / dt.days) : "–"}</td></tr></tfoot>` : emptyTbody(COLS + 4, loading ? "Loading…" : "No drivers yet."));
+    const tt = aggDays(dBase);
+    $("driverTable").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Depot</th><th>Days over cap</th>${DHEAD}<th>Per day</th></tr></thead>` +
+      (dRows ? `<tbody>${dRows}</tbody><tfoot><tr><td class="l">Total</td><td></td><td>${tt.overDays}</td>${dcells(tt)}<td>${tt.days ? money(tt.biz / tt.days) : "–"}</td></tr></tfoot>` : emptyTbody(12, S.driversLoaded ? "No drivers yet." : "Loading…"));
 
     // methods
-    const base = ui.scope.startsWith("M:") ? all : scoped;
+    const mBase = methodScope ? allCharges : scopeCharges(ui.scope, allCharges);
+    const mAll = aggCharges(mBase);
     const mRows = Object.keys(METHODS).map((m) => {
-      const mt = agg(base.filter((e) => e.method === m));
-      return `<tr class="click${ui.scope === "M:" + m ? " sel" : ""}" data-scope="M:${m}"><td class="l">${methodChip(m)}</td>${cells(mt)}<td>${base.length ? pct(agg(base).spend ? mt.spend / agg(base).spend : NaN) : "–"}</td><td>${mt.n ? money(mt.spend / mt.n) : "–"}</td></tr>`;
+      const mt = aggCharges(mBase.filter((e) => e.method === m));
+      const n = m === "home" ? mBase.filter((e) => e.method === "home").length : mt.n;
+      return `<tr class="click${ui.scope === "M:" + m ? " sel" : ""}" data-scope="M:${m}"><td class="l">${methodChip(m)}</td><td>${n}${m === "home" ? " days" : ""}</td><td>${m === "home" ? "–" : money(mt.spend)}</td><td>${m === "home" ? "–" : pct(mAll.spend ? mt.spend / mAll.spend : NaN)}</td><td>${m === "home" ? "–" : mt.n ? money(mt.spend / mt.n) : "–"}</td><td>${money(mt.biz)}</td><td class="${mt.ded > 0.004 ? "neg" : ""}">${money(mt.ded)}</td></tr>`;
     }).join("");
-    $("methodTable").innerHTML = `<thead><tr><th class="l">Method</th>${HEAD}<th>Share of spend</th><th>Per charge</th></tr></thead><tbody>${mRows}</tbody><tfoot><tr><td class="l">Total</td>${cells(agg(base))}<td></td><td>${agg(base).n ? money(agg(base).spend / agg(base).n) : "–"}</td></tr></tfoot>`;
+    $("methodTable").innerHTML = `<thead><tr><th class="l">Method</th><th>Charges</th><th>Spend</th><th>Share of spend</th><th>Per charge</th><th>Cost to business</th><th>Off wages</th></tr></thead><tbody>${mRows}</tbody><tfoot><tr><td class="l">Total</td><td>${mAll.n}</td><td>${money(mAll.spend)}</td><td></td><td>${mAll.n ? money(mAll.spend / mAll.n) : "–"}</td><td>${money(mAll.biz)}</td><td>${money(mAll.ded)}</td></tr></tfoot>`;
 
     // depots
-    const dBase = ui.scope.startsWith("D:") ? all : scoped;
-    const depots = [...new Set((S.settings.depots || []).concat(dBase.map((e) => e.depot).filter(Boolean)))];
-    const depRows = depots.map((d) => { const x = agg(dBase.filter((e) => e.depot === d)); return `<tr class="click${ui.scope === "D:" + d ? " sel" : ""}" data-scope="D:${esc(d)}"><td class="l name">${esc(d)}</td><td>${x.drivers}</td><td>${x.days}</td>${cells(x)}<td>${x.days ? money(x.biz / x.days) : "–"}</td></tr>`; }).join("");
-    const dx = agg(dBase);
-    $("depotTable").innerHTML = `<thead><tr><th class="l">Depot</th><th>Drivers</th><th>Days</th>${HEAD}<th>Per driver-day</th></tr></thead><tbody>${depRows}</tbody><tfoot><tr><td class="l">Combined</td><td>${dx.drivers}</td><td>${dx.days}</td>${cells(dx)}<td>${dx.days ? money(dx.biz / dx.days) : "–"}</td></tr></tfoot>`;
-
-    // vans
-    const vans = [...new Set(scoped.map((e) => e.van).filter(Boolean))].sort();
-    const vRows = vans.map((v) => { const x = agg(scoped.filter((e) => e.van === v)); return `<tr class="click${ui.scope === "V:" + v ? " sel" : ""}" data-scope="V:${esc(v)}"><td class="l name">${esc(v)}</td>${cells(x)}<td>${Number.isFinite(x.milesPerKwh) ? x.milesPerKwh.toFixed(2) : "–"}</td></tr>`; }).join("");
-    $("vanTable").innerHTML = `<thead><tr><th class="l">Van</th>${HEAD}<th>Miles / kWh</th></tr></thead>` + (vRows ? `<tbody>${vRows}</tbody>` : emptyTbody(COLS + 2, "No charges in these dates."));
+    const depBase = ui.scope.startsWith("D:") ? allDays : sDays;
+    const depots = [...new Set((S.settings.depots || []).concat(depBase.map((d) => d.depot).filter(Boolean)))];
+    const depRows = depots.map((d) => { const x = aggDays(depBase.filter((y) => y.depot === d)); return `<tr class="click${ui.scope === "D:" + d ? " sel" : ""}" data-scope="D:${esc(d)}"><td class="l name">${esc(d)}</td><td>${x.drivers}</td><td>${x.overDays || "–"}</td>${dcells(x)}<td>${x.days ? money(x.biz / x.days) : "–"}</td></tr>`; }).join("");
+    const dx = aggDays(depBase);
+    $("depotTable").innerHTML = `<thead><tr><th class="l">Depot</th><th>Drivers</th><th>Days over cap</th>${DHEAD}<th>Per driver-day</th></tr></thead><tbody>${depRows}</tbody><tfoot><tr><td class="l">Combined</td><td>${dx.drivers}</td><td>${dx.overDays}</td>${dcells(dx)}<td>${dx.days ? money(dx.biz / dx.days) : "–"}</td></tr></tfoot>`;
 
     // networks
     const nets = new Map();
-    for (const e of scoped) {
-      const key = (e.point || (e.method === "home" ? "Home" : "Not given")).trim();
-      const k = key.toLowerCase();
+    for (const e of sCharges.filter((x) => x.method !== "home")) {
+      const key = (e.point || "Not given").trim(); const k = key.toLowerCase();
       if (!nets.has(k)) nets.set(k, { name: key, list: [] });
       nets.get(k).list.push(e);
     }
-    const nRows = [...nets.values()].map((n) => ({ ...n, t: agg(n.list) }))
-      .sort((x, y) => (Number.isFinite(x.t.perKwh) ? x.t.perKwh : 99) - (Number.isFinite(y.t.perKwh) ? y.t.perKwh : 99))
-      .map((n) => `<tr><td class="l name">${esc(n.name)}</td><td class="l">${[...new Set(n.list.map((e) => e.method))].map(methodChip).join(" ")}</td><td>${n.t.n}</td><td>${kwhF(n.t.kwh)}</td><td>${money(n.t.spend)}</td><td>${Number.isFinite(n.t.perKwh) ? pKwh(n.t.perKwh) : "–"}</td><td>${n.t.n ? money(n.t.spend / n.t.n) : "–"}</td><td>${n.t.n ? kwhF(n.t.kwh / n.t.n) : "–"}</td></tr>`).join("");
-    $("networkTable").innerHTML = `<thead><tr><th class="l">Charge point / network</th><th class="l">Method</th><th>Charges</th><th>kWh</th><th>Spend</th><th>£ / kWh</th><th>Per charge</th><th>kWh per charge</th></tr></thead>` + (nRows ? `<tbody>${nRows}</tbody>` : emptyTbody(8, "No charges in these dates."));
+    const nRows = [...nets.values()].map((n) => ({ ...n, t: aggCharges(n.list) })).sort((x, y) => y.t.spend - x.t.spend)
+      .map((n) => `<tr><td class="l name">${esc(n.name)}</td><td class="l">${[...new Set(n.list.map((e) => e.method))].map(methodChip).join(" ")}</td><td>${n.t.n}</td><td>${money(n.t.spend)}</td><td>${n.t.n ? money(n.t.spend / n.t.n) : "–"}</td><td>${money(n.t.covered)}</td><td class="${n.t.ded > 0.004 ? "neg" : ""}">${money(n.t.ded)}</td></tr>`).join("");
+    $("networkTable").innerHTML = `<thead><tr><th class="l">Charge point / network</th><th class="l">Method</th><th>Charges</th><th>Spend</th><th>Per charge</th><th>Business covers</th><th>Off wages</th></tr></thead>` + (nRows ? `<tbody>${nRows}</tbody>` : emptyTbody(7, loadingText()));
 
     // time breakdown
     $("weekBlock").hidden = ui.view !== "period";
     if (ui.view === "period") {
       let w = "";
-      for (let i = 0; i < 4; i++) { const ws = addDays(a, i * 7), we = addDays(ws, 6); const x = agg(scoped.filter(inRange(ws, we))); w += `<tr class="click${x.n || x.allow ? "" : " dim"}" data-week="${ws}"><td class="l">Week ${i + 1} <span class="small">${esc(shortD(ws))} – ${esc(shortD(we))}</span></td>${cells(x)}</tr>`; }
-      $("weekTable").innerHTML = `<thead><tr><th class="l">Week</th>${HEAD}</tr></thead><tbody>${w}</tbody><tfoot><tr><td class="l">Pay period total</td>${cells(t)}</tr></tfoot>`;
+      for (let i = 0; i < 4; i++) { const ws = addDays(a, i * 7), we = addDays(ws, 6); const x = aggDays(sDays.filter(inRange(ws, we))); w += `<tr class="click${x.days ? "" : " dim"}" data-week="${ws}"><td class="l">Week ${i + 1} <span class="small">${esc(shortD(ws))} – ${esc(shortD(we))}</span></td>${dcells(x)}</tr>`; }
+      $("weekTable").innerHTML = `<thead><tr><th class="l">Week</th>${DHEAD}</tr></thead><tbody>${w}</tbody><tfoot><tr><td class="l">Pay period total</td>${dcells(t)}</tr></tfoot>`;
     }
     if (ui.view === "day") {
-      $("timeTitle").textContent = "Charges on this day";
-      $("timeMeta").textContent = "";
-      $("timeTable").innerHTML = chargeTable(scoped, false, false);
+      $("timeTitle").textContent = "Charges on this day"; $("timeMeta").textContent = "";
+      $("timeTable").innerHTML = chargeTable(sCharges, false, false);
     } else {
-      $("timeTitle").textContent = "Day by day";
-      $("timeMeta").textContent = "Tap a day to open it.";
+      $("timeTitle").textContent = "Day by day"; $("timeMeta").textContent = "Tap a day to open it.";
       let rows = "";
-      for (let d = a; d <= b; d = addDays(d, 1)) { const x = agg(scoped.filter((e) => e.date === d)); rows += `<tr class="click${x.n || x.allow ? "" : " dim"}" data-day="${d}"><td class="l">${esc(dayD(d))}</td>${cells(x)}</tr>`; }
-      $("timeTable").innerHTML = `<thead><tr><th class="l">Day</th>${HEAD}</tr></thead><tbody>${rows}</tbody><tfoot><tr><td class="l">Total</td>${cells(t)}</tr></tfoot>`;
+      for (let d = a; d <= b; d = addDays(d, 1)) { const x = aggDays(sDays.filter((y) => y.date === d)); rows += `<tr class="click${x.days ? "" : " dim"}" data-day="${d}"><td class="l">${esc(dayD(d))}</td>${dcells(x)}</tr>`; }
+      $("timeTable").innerHTML = `<thead><tr><th class="l">Day</th>${DHEAD}</tr></thead><tbody>${rows}</tbody><tfoot><tr><td class="l">Total</td>${dcells(t)}</tr></tfoot>`;
     }
   }
 
   function chargeTable(list, showDate, withActions) {
     const rows = list.slice().sort((x, y) => (showDate ? y.date.localeCompare(x.date) : 0) || String(x.driver).localeCompare(String(y.driver)) || String(x.savedAt || "").localeCompare(String(y.savedAt || "")));
-    const head = `<thead><tr>${showDate ? `<th class="l">Date</th>` : ""}<th class="l">Driver</th><th class="l">Van</th><th class="l">Method</th><th class="l">Charge point / network</th><th>kWh</th><th>Cost</th><th>Mileage</th><th>Business covers</th><th>Home allowance</th><th>Off wages</th><th class="l">Note</th>${withActions ? "<th></th>" : ""}</tr></thead>`;
-    if (!rows.length) return head + emptyTbody(13, S.db && !S.chargesLoaded ? "Loading…" : "Nothing logged.");
+    const head = `<thead><tr>${showDate ? `<th class="l">Date</th>` : ""}<th class="l">Driver</th><th class="l">Method</th><th class="l">Charge point / network</th><th>Cost</th><th>Mileage</th><th>Home allowance</th><th>Business covers</th><th>Off wages</th><th class="l">Note</th>${withActions ? "<th></th>" : ""}</tr></thead>`;
+    if (!rows.length) return head + emptyTbody(11, S.db && !(showDate ? S.chargesLoaded : S.dayLoaded) ? "Loading…" : "Nothing logged.");
     const body = rows.map((e) => {
       const drv = driverById(e.driverId);
-      const homeDay = e.method === "home" && !e.kwh && !has(e.cost);
-      return `<tr>${showDate ? `<td class="l">${esc(dayD(e.date))}</td>` : ""}<td class="l name">${esc((drv && drv.name) || e.driver)}</td><td class="l">${esc(e.van)}</td><td class="l">${methodChip(e.method)}</td>
-        <td class="l">${homeDay ? '<span class="small">Home day</span>' : esc(e.point || "")}</td><td>${e.kwh ? kwhF(e.kwh) : "–"}</td>
-        <td>${e.spend ? money(e.spend) + (e.est ? ' <span class="small">est.</span>' : "") : "–"}</td><td>${has(e.mileage) ? Number(e.mileage).toLocaleString("en-GB") : "–"}</td>
-        <td>${money(e.covered)}</td><td>${e.allow ? money(e.allow) : "–"}</td><td class="${e.ded > 0.004 ? "neg" : ""}">${e.ded > 0.004 ? money(e.ded) : "–"}</td>
+      const home = e.method === "home";
+      return `<tr>${showDate ? `<td class="l">${esc(dayD(e.date))}</td>` : ""}<td class="l name">${esc((drv && drv.name) || e.driver)}</td><td class="l">${methodChip(e.method)}</td>
+        <td class="l">${home ? '<span class="small">Home-charged</span>' : esc(e.point || "")}</td><td>${home ? "–" : money(e.spend)}</td><td>${has(e.mileage) ? Number(e.mileage).toLocaleString("en-GB") : "–"}</td>
+        <td>${e.allow ? money(e.allow) : "–"}</td><td>${home ? "–" : money(e.covered)}</td><td class="${e.ded > 0.004 ? "neg" : ""}">${e.ded > 0.004 ? money(e.ded) : "–"}</td>
         <td class="wrapcell">${esc(e.note || "")}</td>
-        ${withActions ? `<td><div class="rowbtns">${S.canWrite ? `<button type="button" class="mini" data-edit="${esc(e.id)}">Edit</button><button type="button" class="mini" data-del="${esc(e.id)}">Delete</button>` : ""}</div></td>` : ""}</tr>`;
+        ${withActions ? `<td><div class="rowbtns">${S.canWrite ? `${home ? "" : `<button type="button" class="mini" data-edit="${esc(e.id)}">Edit</button>`}<button type="button" class="mini" data-del="${esc(e.id)}">Delete</button>` : ""}</div></td>` : ""}</tr>`;
     }).join("");
-    const t = agg(rows);
-    return head + `<tbody>${body}</tbody><tfoot><tr>${showDate ? "<td class=\"l\">Total</td><td></td>" : "<td class=\"l\">Total</td>"}<td></td><td></td><td></td><td>${kwhF(t.kwh)}</td><td>${money(t.spend)}</td><td></td><td>${money(t.covered)}</td><td>${money(t.allow)}</td><td>${money(t.ded)}</td><td></td>${withActions ? "<td></td>" : ""}</tr></tfoot>`;
+    const t = aggCharges(rows);
+    return head + `<tbody>${body}</tbody><tfoot><tr><td class="l">Total</td>${showDate ? "<td></td>" : ""}<td></td><td></td><td>${money(t.spend)}</td><td></td><td>${money(t.allow)}</td><td>${money(t.covered)}</td><td>${money(t.ded)}</td><td></td>${withActions ? "<td></td>" : ""}</tr></tfoot>`;
   }
 
   // ============================================================ LOG
@@ -794,71 +727,58 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   function fillDriverSelect() {
     const sel = $("fDriver"); const cur = sel.value;
     const list = sortDrivers(S.drivers.filter((d) => d.active !== false || d.id === cur));
-    sel.innerHTML = `<option value="">Choose a driver</option>` + list.map((d) => `<option value="${esc(d.id)}">${esc(d.name)} · ${d.type === "home" ? "home" : "public"}</option>`).join("");
+    sel.innerHTML = `<option value="">Choose a driver</option>` + list.map((d) => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("");
     sel.value = cur;
+  }
+
+  function explainDay(g) {
+    if (g.home) {
+      let s = `Home-charged: flat ${money(g.allowance)}.`;
+      if (g.spend) s += ` Other charging ${money(g.spend)} is paid back in full.`;
+      return s;
+    }
+    if (!g.spend) return "No charging cost logged.";
+    return g.ded > 0.004 ? `Spent ${money(g.spend)}: ${money(g.cap)} covered, ${money(g.ded)} over.` : `Spent ${money(g.spend)}, within the ${money(g.cap)} credit. No difference is paid.`;
   }
 
   function renderLog() {
     fillDriverSelect();
     const d = ui.logDate;
+    if (!ui.editing) $("fDate").value = d;
     $("logDayTitle").textContent = `Charges on ${longD(d)}`;
     const { charges, days } = enrich(S.day);
     $("logTable").innerHTML = chargeTable(charges, false, true);
-    const rows = days.sort((x, y) => x.name.localeCompare(y.name)).map((g) => `<tr><td class="l name">${esc(g.name)}</td><td class="l">${typeChip(g.type)}</td><td>${money(g.spendBiz)}</td><td>${money(g.covered)}</td><td>${g.allowance ? money(g.allowance) : "–"}</td><td class="${g.ded > 0.004 ? "neg" : ""}">${g.ded > 0.004 ? money(g.ded) : "–"}</td><td><b>${money(g.biz)}</b></td><td class="wrapcell">${esc(explainDay(g))}</td></tr>`).join("");
-    $("logDayDrivers").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Type</th><th>Public / on-route spend</th><th>Business covers</th><th>Home allowance</th><th>Off wages</th><th>Cost to business</th><th class="l">Why</th></tr></thead>` + (rows ? `<tbody>${rows}</tbody>` : emptyTbody(8, S.db && !S.dayLoaded ? "Loading…" : "Nothing logged on this day yet."));
+    const rows = days.sort((x, y) => x.name.localeCompare(y.name)).map((g) => `<tr><td class="l name">${esc(g.name)}</td><td class="l">${dayChip(g.home)}</td><td>${money(g.spend)}</td><td>${g.allowance ? money(g.allowance) : "–"}</td><td>${g.home ? "–" : money(g.covered)}</td><td class="${g.ded > 0.004 ? "neg" : ""}">${g.ded > 0.004 ? money(g.ded) : "–"}</td><td><b>${money(g.biz)}</b></td><td class="wrapcell">${esc(explainDay(g))}</td></tr>`).join("");
+    $("logDayDrivers").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Day</th><th>Public / on-route spend</th><th>Home allowance</th><th>Business covers</th><th>Off wages</th><th>Cost to business</th><th class="l">Why</th></tr></thead>` + (rows ? `<tbody>${rows}</tbody>` : emptyTbody(8, S.db && !S.dayLoaded ? "Loading…" : "Nothing logged on this day yet."));
 
-    // home days list
-    const homeDrivers = sortDrivers(S.drivers.filter((x) => x.type === "home" && x.active !== false));
-    const has_ = new Set(S.day.filter((c) => c.method === "home").map((c) => c.driverId));
-    $("homeList").innerHTML = homeDrivers.length ? homeDrivers.map((x) => `<label class="check" for="hd-${esc(x.id)}"><input type="checkbox" id="hd-${esc(x.id)}" data-hd="${esc(x.id)}"${has_.has(x.id) ? " checked" : ""}> ${esc(x.name)} <span class="small">${esc(x.depot || "")}</span></label>`).join("")
-      : `<p class="note">No home-charging drivers yet. Set a driver to “Home” under Drivers &amp; rules.</p>`;
-    $("homeNote").textContent = `Tick each home-charging driver who worked on ${shortD(d)}. Each ticked day earns the flat ${money(S.settings.homeAllowance)} home allowance, whatever they used. You don't need kWh or cost for these.`;
-    $("saveHome").disabled = !S.canWrite || !homeDrivers.length;
+    const active = sortDrivers(S.drivers.filter((x) => x.active !== false));
+    const homeSet = new Set(S.day.filter((c) => c.method === "home").map((c) => c.driverId));
+    $("homeList").innerHTML = active.length ? active.map((x) => `<label class="check" for="hd-${esc(x.id)}"><input type="checkbox" id="hd-${esc(x.id)}" data-hd="${esc(x.id)}"${homeSet.has(x.id) ? " checked" : ""}> ${esc(x.name)} <span class="small">${esc(x.depot || "")}</span></label>`).join("")
+      : `<p class="note">No drivers yet. Add them under Drivers &amp; rules.</p>`;
+    $("homeNote").textContent = `Tick each driver who charged at home on ${longD(d)}. They get a flat ${money(S.settings.homeAllowance)} for the day, and any other charging that day comes off their wages in full.`;
+    $("saveHome").disabled = !S.canWrite || !active.length;
     updatePreview();
-  }
-
-  function explainDay(g) {
-    if (g.type === "public") {
-      if (!g.spendBiz) return "No public charging logged.";
-      return g.ded > 0.004 ? `Spent ${money(g.spendBiz)}, over the ${money(g.cap)} cap by ${money(g.ded)}.` : `Spent ${money(g.spendBiz)}, within the ${money(g.cap)} cap. No difference is paid.`;
-    }
-    let s = `Flat ${money(g.allowance)} home allowance.`;
-    if (g.spendBiz) s += ` On route ${money(g.spendBiz)}: ${RULES[g.rule] || RULES.cap}.`;
-    return s;
   }
 
   function updatePreview() {
     const p = $("preview");
     const drv = driverById($("fDriver").value);
-    if (!drv) { p.textContent = "Pick a driver to see how the allowance works out for the day."; return; }
+    if (!drv) { p.textContent = "Pick a driver to see how the day works out."; return; }
     const date = $("fDate").value;
-    const cost = $("fCost").value, kwh = $("fKwh").value;
-    const method = methodVal();
-    const sameDay = date === ui.logDate ? S.day.filter((c) => c.driverId === drv.id && c.id !== ui.editing) : null;
-    if (!sameDay) { p.innerHTML = `${esc(drv.name)} is a <b style="font-size:inherit">${drv.type === "home" ? "home" : "public"}</b>-charging driver. Save to see the day's allowance.`; return; }
-    const draft = { id: "draft", date, driverId: drv.id, driver: drv.name, driverType: drv.type, depot: drv.depot, method, kwh, cost: cost === "" ? null : cost, savedAt: "~", cap: S.settings.publicCap, allowance: S.settings.homeAllowance, rule: S.settings.onRouteRule };
-    const { days } = enrich(sameDay.concat([draft]));
-    const g = days[0];
-    if (method === "home" && drv.type === "public") { p.innerHTML = `${esc(drv.name)} is set up for public charging, so home charging earns no allowance. It's logged for kWh and cost only.`; return; }
-    p.innerHTML = `${esc(drv.name)} on ${esc(shortD(date))}: business covers <b>${money(g.biz)}</b>${g.ded > 0.004 ? `, <b class="neg">${money(g.ded)}</b> off wages` : ", nothing off wages"}.<br><span class="note">${esc(explainDay(g))}</span>`;
-  }
-
-  function onDriverPick() {
-    const drv = driverById($("fDriver").value);
-    if (drv && !ui.editing) {
-      if (drv.van) $("fVan").value = drv.van;
-      if (drv.type === "public" && methodVal() === "home") $("mPublic").checked = true;
-    }
-    updatePreview();
+    const cost = $("fCost").value;
+    if (date !== ui.logDate) { p.textContent = "Save to see the day's allowance."; return; }
+    const others = S.day.filter((c) => c.driverId === drv.id && c.id !== ui.editing);
+    const draft = { id: "draft", date, driverId: drv.id, driver: drv.name, depot: drv.depot, method: methodVal(), cost: cost === "" ? 0 : cost, savedAt: "~", cap: S.settings.publicCap, allowance: S.settings.homeAllowance };
+    const g = enrich(others.concat([draft])).days[0];
+    p.innerHTML = `${esc(drv.name)} on ${esc(shortD(date))}: business pays <b>${money(g.biz)}</b>${g.ded > 0.004 ? `, <b class="neg">${money(g.ded)}</b> off wages` : ", nothing off wages"}.<br><span class="note">${esc(explainDay(g))}</span>`;
   }
 
   function resetForm() {
-    const d = $("fDate").value || ui.logDate;
     $("chargeForm").reset();
-    $("fDate").value = d;
+    $("fDate").value = ui.logDate;
     $("mPublic").checked = true;
     ui.editing = null;
-    $("formTitle").textContent = "Log a charge";
+    $("formTitle").textContent = "Log a public or on-route charge";
     $("saveBtn").textContent = "Save charge";
     $("cancelEdit").hidden = true;
     updatePreview();
@@ -867,13 +787,13 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   function startEdit(id) {
     const c = S.day.find((x) => x.id === id) || S.charges.find((x) => x.id === id);
     if (!c) return;
-    if (ui.tab !== "log") { ui.logDate = c.date; showTab("log"); }
+    if (ui.logDate !== c.date) { ui.logDate = c.date; syncSubs(); }
+    if (ui.tab !== "log") showTab("log");
     ui.editing = id;
     fillDriverSelect();
     $("fDate").value = c.date; $("fDriver").value = c.driverId;
-    ({ home: $("mHome"), public: $("mPublic"), onroute: $("mRoute") }[c.method] || $("mPublic")).checked = true;
-    $("fVan").value = c.van || ""; $("fPoint").value = c.point || "";
-    $("fKwh").value = has(c.kwh) ? c.kwh : ""; $("fCost").value = has(c.cost) ? Number(c.cost).toFixed(2) : "";
+    (c.method === "onroute" ? $("mRoute") : $("mPublic")).checked = true;
+    $("fPoint").value = c.point || ""; $("fCost").value = has(c.cost) ? Number(c.cost).toFixed(2) : "";
     $("fMiles").value = has(c.mileage) ? c.mileage : ""; $("fNote").value = c.note || "";
     $("formTitle").textContent = "Edit charge";
     $("saveBtn").textContent = "Save changes";
@@ -883,35 +803,36 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     $("chargeForm").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  const ruleSnap = () => ({ cap: num(S.settings.publicCap), allowance: num(S.settings.homeAllowance) });
+
   async function saveCharge(e) {
     e.preventDefault();
     const msg = $("formMsg");
     if (!S.db) { setMsg(msg, "Saving isn't available here. Open this page on claude.ai while signed in.", "err"); return; }
     const date = $("fDate").value, drv = driverById($("fDriver").value), method = methodVal();
-    const van = normReg($("fVan").value), point = $("fPoint").value.trim(), note = $("fNote").value.trim();
-    const kwh = $("fKwh").value, cost = $("fCost").value, mileage = $("fMiles").value;
-    const bad = (v) => v !== "" && !(Number.isFinite(Number(v)) && Number(v) >= 0);
-    const missing = [!date && "date", !drv && "driver", !van && "van reg", method !== "home" && cost === "" && "cost"].filter(Boolean);
+    const point = $("fPoint").value.trim(), note = $("fNote").value.trim();
+    const cost = $("fCost").value, mileage = $("fMiles").value;
+    const missing = [!date && "date", !drv && "driver", cost === "" && "cost"].filter(Boolean);
     if (missing.length) { setMsg(msg, `Add the ${missing.join(", ")} before saving.`, "err"); return; }
-    if (bad(kwh) || bad(cost) || bad(mileage)) { setMsg(msg, "kWh, cost and mileage must be numbers of 0 or more.", "err"); return; }
+    const bad = (v) => v !== "" && !(Number.isFinite(Number(v)) && Number(v) >= 0);
+    if (bad(cost) || bad(mileage)) { setMsg(msg, "Cost and mileage must be numbers of 0 or more.", "err"); return; }
     const prev = ui.editing && (S.day.find((x) => x.id === ui.editing) || S.charges.find((x) => x.id === ui.editing));
-    const keepRules = prev && prev.driverId === drv.id;
+    const keep = prev && prev.driverId === drv.id && prev.date === date;
     const doc = {
-      date, driverId: drv.id, driver: drv.name, driverType: keepRules ? prev.driverType : drv.type, depot: keepRules ? prev.depot : (drv.depot || ""),
-      van, method, point, kwh: kwh === "" ? null : r2(Number(kwh)), cost: cost === "" ? null : r2(Number(cost)), mileage: mileage === "" ? null : Math.round(Number(mileage)), note,
-      cap: keepRules ? prev.cap : num(S.settings.publicCap), allowance: keepRules ? prev.allowance : num(S.settings.homeAllowance), rule: keepRules ? prev.rule : S.settings.onRouteRule,
+      date, driverId: drv.id, driver: drv.name, depot: keep ? prev.depot : (drv.depot || ""), method, point,
+      cost: r2(Number(cost)), mileage: mileage === "" ? null : Math.round(Number(mileage)), note,
+      ...(keep ? { cap: prev.cap, allowance: prev.allowance } : ruleSnap()),
       savedAt: prev ? prev.savedAt : new Date().toISOString(),
     };
     $("saveBtn").disabled = true;
     try {
       const col = S.db.collection("charges");
       if (ui.editing) await col.doc(ui.editing).set(doc); else await col.add(doc);
-      setMsg(msg, `Saved ${METHODS[method].toLowerCase()} charge for ${drv.name}${doc.cost != null ? `: ${money(doc.cost)}` : ""}.`, "ok");
+      setMsg(msg, `Saved ${METHODS[method].toLowerCase()} charge for ${drv.name}: ${money(doc.cost)}.`, "ok");
       const wasEditing = !!ui.editing;
       if (date !== ui.logDate) { ui.logDate = date; syncSubs(); }
       resetForm();
-      if (!wasEditing) { $("fDriver").value = drv.id; onDriverPick(); }
-      if (drv.van && !wasEditing) $("fVan").value = drv.van;
+      if (!wasEditing) { $("fDriver").value = drv.id; updatePreview(); }
     } catch (err) { setMsg(msg, writeErr(err), "err"); }
     finally { $("saveBtn").disabled = !S.canWrite; }
   }
@@ -919,24 +840,21 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   async function saveHomeDays() {
     const msg = $("homeMsg");
     if (!S.db) { setMsg(msg, "Saving isn't available here.", "err"); return; }
-    const date = ui.logDate;
-    const col = S.db.collection("charges");
-    let added = 0, removed = 0, kept = 0;
+    const date = ui.logDate, col = S.db.collection("charges");
+    let added = 0, removed = 0;
     $("saveHome").disabled = true;
     try {
       for (const box of document.querySelectorAll("#homeList input[data-hd]")) {
         const drv = driverById(box.dataset.hd); if (!drv) continue;
         const mine = S.day.filter((c) => c.driverId === drv.id && c.method === "home");
-        const plain = mine.filter((c) => !has(c.kwh) && !has(c.cost));
         if (box.checked && !mine.length) {
-          await col.add({ date, driverId: drv.id, driver: drv.name, driverType: drv.type, depot: drv.depot || "", van: normReg(drv.van), method: "home", point: "", kwh: null, cost: null, mileage: null, note: "", cap: num(S.settings.publicCap), allowance: num(S.settings.homeAllowance), rule: S.settings.onRouteRule, savedAt: new Date().toISOString() });
+          await col.add({ date, driverId: drv.id, driver: drv.name, depot: drv.depot || "", method: "home", point: "", cost: null, mileage: null, note: "", ...ruleSnap(), savedAt: new Date().toISOString() });
           added++;
         } else if (!box.checked && mine.length) {
-          for (const c of plain) { await col.doc(c.id).delete(); removed++; }
-          if (plain.length < mine.length) kept++;
+          for (const c of mine) { await col.doc(c.id).delete(); removed++; }
         }
       }
-      setMsg(msg, `Saved home days for ${shortD(date)}${added ? `: ${added} added` : ""}${removed ? `, ${removed} removed` : ""}.${kept ? " Home charges with kWh or cost were left in place. Delete them from the table if needed." : ""}`, "ok");
+      setMsg(msg, added || removed ? `Saved for ${shortD(date)}: ${[added && `${added} home-charged`, removed && `${removed} removed`].filter(Boolean).join(", ")}.` : "Nothing changed.", "ok");
     } catch (err) { setMsg(msg, writeErr(err), "err"); }
     finally { $("saveHome").disabled = !S.canWrite; }
   }
@@ -944,49 +862,49 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   async function deleteCharge(btn, msgEl) {
     if (!arm(btn)) return;
     btn.disabled = true;
-    try { await S.db.collection("charges").doc(btn.dataset.del).delete(); if (ui.editing === btn.dataset.del) resetForm(); setMsg(msgEl, "Charge deleted.", "ok"); }
-    catch (err) { btn.disabled = false; setMsg(msgEl, "Couldn't delete that charge. Try again.", "err"); }
+    try { await S.db.collection("charges").doc(btn.dataset.del).delete(); if (ui.editing === btn.dataset.del) resetForm(); setMsg(msgEl, "Deleted.", "ok"); }
+    catch (err) { btn.disabled = false; setMsg(msgEl, "Couldn't delete that. Try again.", "err"); }
   }
 
   // ============================================================ WAGES
   function wageData() {
     const p = periodInfo(ui.date);
-    const { charges, days } = enrich(S.charges);
-    const pd = days.filter(inRange(p.start, p.end));
+    const { days } = enrich(S.charges);
+    const pd = days.filter(inRange(p.start, p.end)).sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
     const map = new Map();
     for (const g of pd) {
-      if (!map.has(g.driverId)) map.set(g.driverId, { id: g.driverId, name: g.name, type: g.type, depot: g.depot, fd: g.fd, weeks: [0, 0, 0, 0], ded: 0, homeDays: 0, allow: 0, overDays: 0, spend: 0, biz: 0, days: 0 });
+      if (!map.has(g.driverId)) map.set(g.driverId, { id: g.driverId, name: g.name, depot: g.depot, list: [], weeks: [0, 0, 0, 0] });
       const r = map.get(g.driverId);
-      const w = Math.floor((toT(g.date) - toT(p.start)) / DAY / 7);
-      r.weeks[w] += g.ded; r.ded += g.ded; r.allow += g.allowance; r.spend += g.spend; r.biz += g.biz; r.days++;
-      if (g.allowance) r.homeDays++;
-      if (g.ded > 0.004) r.overDays++;
+      r.list.push(g);
+      r.weeks[Math.floor((toT(g.date) - toT(p.start)) / DAY / 7)] += g.ded;
     }
-    const rows = [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-    return { p, rows, days: pd.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name)), charges: charges.filter(inRange(p.start, p.end)) };
+    const rows = [...map.values()].map((r) => ({ ...r, t: aggDays(r.list) })).sort((a, b) => a.name.localeCompare(b.name));
+    return { p, rows, days: pd };
   }
 
   function renderWages() {
     const { p, rows, days } = wageData();
     $("wTitle").textContent = periodLabel(p);
     const loading = S.db && !S.chargesLoaded;
-    const sum = (k) => rows.reduce((s, r) => s + r[k], 0);
+    const t = aggDays(days);
     const payHome = S.settings.payHomeViaWages !== false;
+    const net = (x) => (payHome ? x.allow : 0) - x.ded;
     const tile = (cls, label, value, note) => `<div class="tile ${cls}"><span class="eyebrow">${label}</span><b>${loading ? "…" : value}</b>${note ? `<small>${note}</small>` : ""}</div>`;
+    const withDed = rows.filter((r) => r.t.ded > 0.004).length;
     $("wTiles").innerHTML = [
-      tile("minus", "Off wages", money(sum("ded")), `${rows.filter((r) => r.ded > 0.004).length} driver${rows.filter((r) => r.ded > 0.004).length === 1 ? "" : "s"}`),
-      tile("plus", "Home allowances", money(sum("allow")), payHome ? `${sum("homeDays")} home days, paid through wages` : `${sum("homeDays")} home days, not paid through wages`),
-      tile("", "Net to wages", money((payHome ? sum("allow") : 0) - sum("ded")), "Allowances minus deductions"),
-      tile("main", "Cost to business", money(sum("biz")), "Goes in the P&L as charging"),
+      tile("minus", "Off wages", money(t.ded), `${withDed} driver${withDed === 1 ? "" : "s"}`),
+      tile("plus", "Home allowances", money(t.allow), `${t.homeDays} home-charged days${payHome ? ", paid through wages" : ""}`),
+      tile("", "Net to wages", money(net(t)), payHome ? "Allowances minus deductions" : "Deductions only"),
+      tile("main", "Cost to business", money(t.biz), "Goes in the P&L as charging"),
     ].join("");
     $("wMeta").textContent = `Resets on ${longD(addDays(p.end, 1))}`;
-    const head = `<thead><tr><th class="l">Driver</th><th class="l">Type</th><th class="l">Depot</th><th>Wk 1</th><th>Wk 2</th><th>Wk 3</th><th>Wk 4</th><th>Days over cap</th><th>Off wages</th><th>Home days</th><th>Home allowance</th><th>Net to wages</th></tr></thead>`;
-    const net = (r) => (payHome ? r.allow : 0) - r.ded;
-    const body = rows.map((r) => `<tr><td class="l name">${esc(r.name)}</td><td class="l">${typeChip(r.type)}</td><td class="l">${esc(r.depot)}</td>${r.weeks.map((w) => `<td class="${w > 0.004 ? "neg" : ""}">${w > 0.004 ? money(-w) : "–"}</td>`).join("")}<td>${r.overDays || "–"}</td><td class="${r.ded > 0.004 ? "neg" : ""}">${money(-r.ded)}</td><td>${r.homeDays || "–"}</td><td>${r.allow ? money(r.allow) : "–"}</td><td><b class="${net(r) < -0.004 ? "neg" : net(r) > 0.004 ? "pos" : ""}">${money(net(r))}</b></td></tr>`).join("");
+    const head = `<thead><tr><th class="l">Driver</th><th class="l">Depot</th><th>Wk 1</th><th>Wk 2</th><th>Wk 3</th><th>Wk 4</th><th>Home days</th><th>Public days</th><th>Off wages</th><th>Home allowance</th><th>Net to wages</th><th>Cost to business</th></tr></thead>`;
+    const nc = (v) => `<b class="${v < -0.004 ? "neg" : v > 0.004 ? "pos" : ""}">${money(v)}</b>`;
+    const body = rows.map((r) => `<tr><td class="l name">${esc(r.name)}</td><td class="l">${esc(r.depot)}</td>${r.weeks.map((w) => `<td class="${w > 0.004 ? "neg" : ""}">${w > 0.004 ? money(-w) : "–"}</td>`).join("")}<td>${r.t.homeDays || "–"}</td><td>${r.t.publicDays || "–"}</td><td class="${r.t.ded > 0.004 ? "neg" : ""}">${money(-r.t.ded)}</td><td>${r.t.allow ? money(r.t.allow) : "–"}</td><td>${nc(net(r.t))}</td><td>${money(r.t.biz)}</td></tr>`).join("");
     const wk = [0, 1, 2, 3].map((i) => rows.reduce((s, r) => s + r.weeks[i], 0));
-    $("wTable").innerHTML = head + (body ? `<tbody>${body}</tbody><tfoot><tr><td class="l">Total</td><td></td><td></td>${wk.map((w) => `<td>${money(-w)}</td>`).join("")}<td>${sum("overDays")}</td><td>${money(-sum("ded"))}</td><td>${sum("homeDays")}</td><td>${money(sum("allow"))}</td><td>${money((payHome ? sum("allow") : 0) - sum("ded"))}</td></tr></tfoot>` : emptyTbody(12, loading ? "Loading…" : "Nothing logged in this pay period."));
-    const dRows = days.filter((g) => g.ded > 0.004).map((g) => `<tr><td class="l">${esc(dayD(g.date))}</td><td class="l name">${esc(g.name)}</td><td class="l">${typeChip(g.type)}</td><td>${money(g.spendBiz)}</td><td>${money(g.covered)}</td><td class="neg">${money(g.ded)}</td><td class="wrapcell">${esc(explainDay(g))}</td></tr>`).join("");
-    $("wDays").innerHTML = `<thead><tr><th class="l">Date</th><th class="l">Driver</th><th class="l">Type</th><th>Public / on-route spend</th><th>Business covers</th><th>Off wages</th><th class="l">Why</th></tr></thead>` + (dRows ? `<tbody>${dRows}</tbody>` : emptyTbody(7, loading ? "Loading…" : "No deductions this pay period."));
+    $("wTable").innerHTML = head + (body ? `<tbody>${body}</tbody><tfoot><tr><td class="l">Total</td><td></td>${wk.map((w) => `<td>${money(-w)}</td>`).join("")}<td>${t.homeDays}</td><td>${t.publicDays}</td><td>${money(-t.ded)}</td><td>${money(t.allow)}</td><td>${money(net(t))}</td><td>${money(t.biz)}</td></tr></tfoot>` : emptyTbody(12, loadingText()));
+    const dRows = days.filter((g) => g.ded > 0.004).map((g) => `<tr><td class="l">${esc(dayD(g.date))}</td><td class="l name">${esc(g.name)}</td><td class="l">${dayChip(g.home)}</td><td>${money(g.spend)}</td><td>${g.home ? "–" : money(g.covered)}</td><td class="neg">${money(g.ded)}</td><td class="wrapcell">${esc(explainDay(g))}</td></tr>`).join("");
+    $("wDays").innerHTML = `<thead><tr><th class="l">Date</th><th class="l">Driver</th><th class="l">Day</th><th>Public / on-route spend</th><th>Business covers</th><th>Off wages</th><th class="l">Why</th></tr></thead>` + (dRows ? `<tbody>${dRows}</tbody>` : emptyTbody(7, S.db && !S.chargesLoaded ? "Loading…" : "No deductions this pay period."));
   }
 
   async function saveCsv(rows, filename, msgEl) {
@@ -1011,7 +929,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     const payHome = S.settings.payHomeViaWages !== false;
     const rows = [["Date", "Driver", "Type", "Amount", "Note"]];
     for (const g of days) {
-      if (g.ded > 0.004) rows.push([g.date, g.name, "Fuel over allowance", g.ded.toFixed(2), `EV charging ${money(g.spendBiz)}, allowance ${money(g.type === "public" ? g.cap : g.covered)}`]);
+      if (g.ded > 0.004) rows.push([g.date, g.name, "Fuel over allowance", g.ded.toFixed(2), g.home ? `EV charging ${money(g.spend)} on a home-charged day` : `EV charging ${money(g.spend)}, ${money(g.cap)} covered`]);
       if (payHome && g.allowance) rows.push([g.date, g.name, "Top up", g.allowance.toFixed(2), "Home charging allowance"]);
     }
     saveCsv(rows, `ev-charging-wages-${p.start}.csv`, $("wMsg"));
@@ -1019,14 +937,8 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
 
   function exportPnl() {
     const { p, days } = wageData();
-    const map = new Map();
-    for (const g of days) {
-      const k = g.date + "|" + g.driverId;
-      map.set(k, g);
-    }
-    const rows = [["Date", "FD", "Driver", "Depot", "Charging (cost to business)", "Charging spend", "Paid back by driver", "Home allowance"]];
-    for (const g of [...map.values()].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name)))
-      rows.push([g.date, g.fd || "", g.name, g.depot, g.biz.toFixed(2), g.spend.toFixed(2), g.ded.toFixed(2), g.allowance.toFixed(2)]);
+    const rows = [["Date", "Driver", "Depot", "Day", "Charging (cost to business)", "Charging spend", "Paid back by driver", "Home allowance"]];
+    for (const g of days) rows.push([g.date, g.name, g.depot, g.home ? "Home-charged" : "Public", g.biz.toFixed(2), g.spend.toFixed(2), g.ded.toFixed(2), g.allowance.toFixed(2)]);
     saveCsv(rows, `ev-charging-pnl-${p.start}.csv`, $("wMsg"));
   }
 
@@ -1036,8 +948,8 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     const lines = [`EV charging, pay period ${periodLabel(p)}`];
     for (const r of rows) {
       const bits = [];
-      if (r.ded > 0.004) bits.push(`${money(r.ded)} off wages (${r.overDays} day${r.overDays === 1 ? "" : "s"} over cap)`);
-      if (payHome && r.allow) bits.push(`${money(r.allow)} home allowance (${r.homeDays} days)`);
+      if (r.t.ded > 0.004) bits.push(`${money(r.t.ded)} off wages`);
+      if (payHome && r.t.allow) bits.push(`${money(r.t.allow)} home allowance (${r.t.homeDays} days)`);
       if (bits.length) lines.push(`${r.name}: ${bits.join(", ")}`);
     }
     if (lines.length === 1) lines.push("No deductions or allowances.");
@@ -1054,65 +966,56 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     const { charges, days } = enrich(S.charges);
     const list = charges.filter(inRange(a, b));
     const dl = days.filter(inRange(a, b));
-    const t = agg(list);
+    const t = aggDays(dl), c = aggCharges(list);
     const loading = S.db && !S.chargesLoaded;
-    const pubDays = dl.filter((g) => g.type === "public" && g.spendBiz > 0);
-    const over = pubDays.filter((g) => g.ded > 0.004).length;
+    const homeD = dl.filter((g) => g.home), pubD = dl.filter((g) => !g.home);
+    const avg = (arr, k) => (arr.length ? arr.reduce((s, g) => s + g[k], 0) / arr.length : NaN);
+    const m = (v) => (Number.isFinite(v) ? money(v) : "–");
     const tile = (cls, label, value, note) => `<div class="tile ${cls}"><span class="eyebrow">${label}</span><b>${loading ? "…" : value}</b>${note ? `<small>${note}</small>` : ""}</div>`;
     $("aTiles").innerHTML = [
-      tile("main", "Cost to business per driver-day", dl.length ? money(dl.reduce((s, g) => s + g.biz, 0) / dl.length) : "–", `${dl.length} driver-days`),
-      tile("", "Spend per charge", t.n ? money(t.spend / t.n) : "–", `${t.n} charges`),
-      tile("", "kWh per charge", t.n ? kwhF(t.kwh / t.n) : "–", ""),
-      tile("", "Average price", Number.isFinite(t.perKwh) ? pKwh(t.perKwh) : "–", "per kWh"),
-      tile("", "Cost per mile", Number.isFinite(t.perMile) ? money(t.perMile) : "–", Number.isFinite(t.milesPerKwh) ? `${t.milesPerKwh.toFixed(2)} miles per kWh` : ""),
-      tile("minus", "Public days over the cap", pubDays.length ? pct(over / pubDays.length) : "–", `${over} of ${pubDays.length} public-charging days`),
-      tile("minus", "Deduction per over-cap day", over ? money(pubDays.filter((g) => g.ded > 0.004).reduce((s, g) => s + g.ded, 0) / over) : "–", ""),
-      tile("", "Public spend per day", pubDays.length ? money(pubDays.reduce((s, g) => s + g.spendBiz, 0) / pubDays.length) : "–", "Public-charging drivers"),
+      tile("main", "Cost to business per driver-day", m(avg(dl, "biz")), `${dl.length} driver-days`),
+      tile("", "Spend per charge", c.n ? money(c.spend / c.n) : "–", `${c.n} public / on-route charges`),
+      tile("", "Spend per public day", m(avg(pubD, "spend")), `${pubD.length} public days`),
+      tile("minus", "Public days over the credit", pubD.length ? pct(t.overDays / pubD.length) : "–", `${t.overDays} of ${pubD.length}`),
+      tile("minus", "Paid back per over day", t.overDays ? money(pubD.filter((g) => g.ded > 0.004).reduce((s, g) => s + g.ded, 0) / t.overDays) : "–", ""),
+      tile("", "Home-charged share", dl.length ? pct(homeD.length / dl.length) : "–", `${homeD.length} home-charged days`),
+      tile("minus", "Off wages per driver-day", m(avg(dl, "ded")), ""),
+      tile("", "Cost per mile", c.miles ? money(c.milesSpend / c.miles) : "–", c.miles ? `${Math.round(c.miles).toLocaleString("en-GB")} miles` : "Log mileage to see this"),
     ].join("");
 
-    const AH = `<th>Days</th><th>Charges</th><th>Spend / day</th><th>Cost to business / day</th><th>Off wages / day</th><th>kWh / day</th><th>Spend / charge</th><th>£ / kWh</th><th>£ / mile</th><th>Days over cap</th>`;
-    const acells = (cl, gl) => {
-      const x = agg(cl); const n = gl.length;
-      const sp = gl.reduce((s, g) => s + g.spend, 0), bz = gl.reduce((s, g) => s + g.biz, 0), dd = gl.reduce((s, g) => s + g.ded, 0), kw = gl.reduce((s, g) => s + g.kwh, 0);
-      const ov = gl.filter((g) => g.ded > 0.004).length;
-      return `<td>${n}</td><td>${x.n}</td><td>${n ? money(sp / n) : "–"}</td><td><b>${n ? money(bz / n) : "–"}</b></td><td class="${dd > 0.004 ? "neg" : ""}">${n ? money(dd / n) : "–"}</td><td>${n ? kwhF(kw / n) : "–"}</td><td>${x.n ? money(x.spend / x.n) : "–"}</td><td>${Number.isFinite(x.perKwh) ? pKwh(x.perKwh) : "–"}</td><td>${Number.isFinite(x.perMile) ? money(x.perMile) : "–"}</td><td>${ov || "–"}</td>`;
+    const AH = `<th>Days</th><th>Home days</th><th>Charges</th><th>Spend / day</th><th>Cost to business / day</th><th>Off wages / day</th><th>Spend / charge</th><th>Days over credit</th><th>£ / mile</th>`;
+    const acells = (gl) => {
+      const x = aggDays(gl), n = gl.length;
+      const cc = aggCharges(gl.flatMap((g) => g.charges));
+      return `<td>${n}</td><td>${x.homeDays || "–"}</td><td>${x.n}</td><td>${n ? money(x.spend / n) : "–"}</td><td><b>${n ? money(x.biz / n) : "–"}</b></td><td class="${x.ded > 0.004 ? "neg" : ""}">${n ? money(x.ded / n) : "–"}</td><td>${x.n ? money(x.spend / x.n) : "–"}</td><td>${x.overDays || "–"}</td><td>${cc.miles ? money(cc.milesSpend / cc.miles) : "–"}</td>`;
     };
-    const empty = (c) => emptyTbody(c, loading ? "Loading…" : "Nothing logged in these dates.");
-    const totalRow = `<tfoot><tr><td class="l">Overall</td>{pad}${acells(list, dl)}</tr></tfoot>`;
-
     const ids = [...new Set(dl.map((g) => g.driverId))];
-    const dRows = ids.map((id) => ({ id, g: dl.filter((x) => x.driverId === id) })).sort((x, y) => x.g[0].name.localeCompare(y.g[0].name))
-      .map(({ id, g }) => `<tr><td class="l name">${esc(g[0].name)}</td><td class="l">${typeChip(g[0].type)}</td><td class="l">${esc(g[0].depot)}</td>${acells(list.filter((e) => e.driverId === id), g)}</tr>`).join("");
-    $("aDriver").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Type</th><th class="l">Depot</th>${AH}</tr></thead>` + (dRows ? `<tbody>${dRows}</tbody>${totalRow.replace("{pad}", "<td></td><td></td>")}` : empty(13));
+    const dRows = ids.map((id) => dl.filter((x) => x.driverId === id)).sort((x, y) => x[0].name.localeCompare(y[0].name))
+      .map((g) => `<tr><td class="l name">${esc(g[0].name)}</td><td class="l">${esc(g[0].depot)}</td>${acells(g)}</tr>`).join("");
+    $("aDriver").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Depot</th>${AH}</tr></thead>` + (dRows ? `<tbody>${dRows}</tbody><tfoot><tr><td class="l">Overall</td><td></td>${acells(dl)}</tr></tfoot>` : emptyTbody(11, loadingText()));
+
+    const tRow = (label, g) => `<tr><td class="l">${label}</td><td>${g.length}</td><td>${m(avg(g, "spend"))}</td><td>${m(avg(g, "allowance"))}</td><td>${m(avg(g, "covered"))}</td><td class="neg">${m(avg(g, "ded"))}</td><td><b>${m(avg(g, "biz"))}</b></td><td>${money(g.reduce((s, x) => s + x.biz, 0))}</td></tr>`;
+    $("aType").innerHTML = `<thead><tr><th class="l">Day</th><th>Days</th><th>Spend / day</th><th>Home allowance / day</th><th>Business covers / day</th><th>Off wages / day</th><th>Cost to business / day</th><th>Cost to business</th></tr></thead><tbody>${tRow(dayChip(true), homeD)}${tRow(dayChip(false), pubD)}</tbody>`;
 
     const deps = [...new Set((S.settings.depots || []).concat(dl.map((g) => g.depot).filter(Boolean)))];
-    const depRows = deps.map((d) => `<tr><td class="l name">${esc(d)}</td><td>${new Set(dl.filter((g) => g.depot === d).map((g) => g.driverId)).size}</td>${acells(list.filter((e) => e.depot === d), dl.filter((g) => g.depot === d))}</tr>`).join("");
-    $("aDepot").innerHTML = `<thead><tr><th class="l">Depot</th><th>Drivers</th>${AH}</tr></thead><tbody>${depRows}</tbody>${totalRow.replace("{pad}", `<td>${new Set(dl.map((g) => g.driverId)).size}</td>`)}`;
+    $("aDepot").innerHTML = `<thead><tr><th class="l">Depot</th><th>Drivers</th>${AH}</tr></thead><tbody>${deps.map((d) => { const g = dl.filter((x) => x.depot === d); return `<tr><td class="l name">${esc(d)}</td><td>${new Set(g.map((x) => x.driverId)).size}</td>${acells(g)}</tr>`; }).join("")}</tbody><tfoot><tr><td class="l">Overall</td><td>${t.drivers}</td>${acells(dl)}</tr></tfoot>`;
 
-    const mRows = Object.keys(METHODS).map((m) => { const x = agg(list.filter((e) => e.method === m)); return `<tr><td class="l">${methodChip(m)}</td><td>${x.n}</td><td>${kwhF(x.kwh)}</td><td>${money(x.spend)}</td><td>${x.n ? money(x.spend / x.n) : "–"}</td><td>${x.n ? kwhF(x.kwh / x.n) : "–"}</td><td>${Number.isFinite(x.perKwh) ? pKwh(x.perKwh) : "–"}</td><td>${Number.isFinite(x.perMile) ? money(x.perMile) : "–"}</td><td>${money(x.biz)}</td><td class="${x.ded > 0.004 ? "neg" : ""}">${money(x.ded)}</td></tr>`; }).join("");
-    $("aMethod").innerHTML = `<thead><tr><th class="l">Method</th><th>Charges</th><th>kWh</th><th>Spend</th><th>Spend / charge</th><th>kWh / charge</th><th>£ / kWh</th><th>£ / mile</th><th>Cost to business</th><th>Off wages</th></tr></thead><tbody>${mRows}</tbody>`;
-
-    const tRows = ["home", "public"].map((ty) => `<tr><td class="l">${typeChip(ty)}</td><td>${new Set(dl.filter((g) => g.type === ty).map((g) => g.driverId)).size}</td>${acells(list.filter((e) => dl.some((g) => g.type === ty && g.driverId === e.driverId && g.date === e.date)), dl.filter((g) => g.type === ty))}</tr>`).join("");
-    $("aType").innerHTML = `<thead><tr><th class="l">Driver type</th><th>Drivers</th>${AH}</tr></thead><tbody>${tRows}</tbody>`;
-
-    const vans = [...new Set(list.map((e) => e.van).filter(Boolean))].sort();
-    const vRows = vans.map((v) => { const x = agg(list.filter((e) => e.van === v)); return `<tr><td class="l name">${esc(v)}</td><td>${x.n}</td><td>${kwhF(x.kwh)}</td><td>${money(x.spend)}</td><td>${x.n ? money(x.spend / x.n) : "–"}</td><td>${Number.isFinite(x.perKwh) ? pKwh(x.perKwh) : "–"}</td><td>${x.miles ? Math.round(x.miles).toLocaleString("en-GB") : "–"}</td><td>${Number.isFinite(x.perMile) ? money(x.perMile) : "–"}</td><td>${Number.isFinite(x.milesPerKwh) ? x.milesPerKwh.toFixed(2) : "–"}</td></tr>`; }).join("");
-    $("aVan").innerHTML = `<thead><tr><th class="l">Van</th><th>Charges</th><th>kWh</th><th>Spend</th><th>Spend / charge</th><th>£ / kWh</th><th>Miles</th><th>£ / mile</th><th>Miles / kWh</th></tr></thead>` + (vRows ? `<tbody>${vRows}</tbody>` : empty(9));
+    $("aMethod").innerHTML = `<thead><tr><th class="l">Method</th><th>Charges</th><th>Spend</th><th>Spend / charge</th><th>Share of spend</th><th>Business covers</th><th>Off wages</th></tr></thead><tbody>${["public", "onroute"].map((k) => { const x = aggCharges(list.filter((e) => e.method === k)); return `<tr><td class="l">${methodChip(k)}</td><td>${x.n}</td><td>${money(x.spend)}</td><td>${x.n ? money(x.spend / x.n) : "–"}</td><td>${pct(c.spend ? x.spend / c.spend : NaN)}</td><td>${money(x.covered)}</td><td class="${x.ded > 0.004 ? "neg" : ""}">${money(x.ded)}</td></tr>`; }).join("")}<tr><td class="l">${methodChip("home")}</td><td>${homeD.length} days</td><td>–</td><td>–</td><td>–</td><td>${money(t.allow)}</td><td>–</td></tr></tbody>`;
 
     let trend = "";
     for (let i = 0; i < ui.avgN; i++) {
       const ps = addDays(a, i * 28), pe = addDays(ps, 27);
-      const x = agg(list.filter(inRange(ps, pe))), g = dl.filter(inRange(ps, pe));
-      trend += `<tr><td class="l">${esc(shortD(ps))} – ${esc(shortD(pe))}</td><td>${g.length}</td><td>${x.n}</td><td>${kwhF(x.kwh)}</td><td>${money(x.spend)}</td><td><b>${money(x.biz)}</b></td><td class="${x.ded > 0.004 ? "neg" : ""}">${money(x.ded)}</td><td>${money(x.allow)}</td><td>${Number.isFinite(x.perKwh) ? pKwh(x.perKwh) : "–"}</td><td>${g.length ? money(x.biz / g.length) : "–"}</td></tr>`;
+      const g = dl.filter(inRange(ps, pe)), x = aggDays(g);
+      trend += `<tr><td class="l">${esc(shortD(ps))} – ${esc(shortD(pe))}</td><td>${x.days}</td><td>${x.homeDays}</td><td>${x.publicDays}</td><td>${money(x.spend)}</td><td>${money(x.allow)}</td><td>${money(x.covered)}</td><td class="${x.ded > 0.004 ? "neg" : ""}">${money(x.ded)}</td><td><b>${money(x.biz)}</b></td><td>${x.days ? money(x.biz / x.days) : "–"}</td></tr>`;
     }
-    $("aTrend").innerHTML = `<thead><tr><th class="l">Pay period</th><th>Driver-days</th><th>Charges</th><th>kWh</th><th>Spend</th><th>Cost to business</th><th>Off wages</th><th>Home allowances</th><th>£ / kWh</th><th>Cost / driver-day</th></tr></thead><tbody>${trend}</tbody>`;
+    $("aTrend").innerHTML = `<thead><tr><th class="l">Pay period</th><th>Driver-days</th><th>Home days</th><th>Public days</th><th>Spend</th><th>Home allowances</th><th>Business covers</th><th>Off wages</th><th>Cost to business</th><th>Per driver-day</th></tr></thead><tbody>${trend}</tbody>`;
   }
 
   // ============================================================ ENTRIES
   function entriesList() {
     const p = periodInfo(ui.date);
     const { charges } = enrich(S.charges);
-    return { p, list: charges.filter(inRange(p.start, p.end)).filter(scopeFilter(ui.eScope)) };
+    return { p, list: scopeCharges(ui.eScope, charges.filter(inRange(p.start, p.end))) };
   }
   function renderEntries() {
     fillScope($("eScope"), ui.eScope); ui.eScope = $("eScope").value;
@@ -1122,30 +1025,26 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   }
   function exportEntries() {
     const { p, list } = entriesList();
-    const rows = [["Date", "Driver", "Driver type", "Depot", "FD", "Van reg", "Method", "Charge point / network", "kWh", "Cost", "Cost estimated", "Mileage", "Miles since last charge", "Business covers", "Home allowance", "Off wages", "Note"]];
+    const rows = [["Date", "Driver", "Depot", "Method", "Charge point / network", "Cost", "Mileage", "Home allowance", "Business covers", "Off wages", "Note"]];
     for (const e of list.sort((a, b) => a.date.localeCompare(b.date) || String(a.driver).localeCompare(String(b.driver)))) {
       const d = driverById(e.driverId);
-      rows.push([e.date, (d && d.name) || e.driver, TYPES[e.driverType] || "", e.depot, (d && d.fd) || "", e.van, METHODS[e.method], e.point || "", e.kwh || "", e.spend ? e.spend.toFixed(2) : "", e.est ? "yes" : "", has(e.mileage) ? e.mileage : "", e.miles || "", e.covered.toFixed(2), e.allow.toFixed(2), e.ded.toFixed(2), e.note || ""]);
+      rows.push([e.date, (d && d.name) || e.driver, e.depot, METHODS[e.method], e.point || "", e.method === "home" ? "" : e.spend.toFixed(2), has(e.mileage) ? e.mileage : "", e.allow.toFixed(2), e.covered.toFixed(2), e.ded.toFixed(2), e.note || ""]);
     }
     saveCsv(rows, `ev-charges-${p.start}.csv`, $("eMsg"));
   }
 
   function exportReport() {
     const [a, b] = rangeFor(ui.view, ui.date);
-    const { charges } = enrich(S.charges);
-    const list = charges.filter(inRange(a, b)).filter(scopeFilter(ui.scope));
-    const H = ["Charges", "kWh", "Spend", "£ per kWh", "Business covers", "Home allowance", "Off wages", "Cost to business", "Miles", "£ per mile"];
-    const row = (t) => [t.n, t.kwh.toFixed(1), t.spend.toFixed(2), Number.isFinite(t.perKwh) ? t.perKwh.toFixed(3) : "", t.covered.toFixed(2), t.allow.toFixed(2), t.ded.toFixed(2), t.biz.toFixed(2), Math.round(t.miles), Number.isFinite(t.perMile) ? t.perMile.toFixed(2) : ""];
-    const rows = [["EV charging report", scopeName(ui.scope), `${a} to ${b}`], [], ["Driver", "Type", "Depot", "FD", ...H]];
-    for (const d of sortDrivers(S.drivers)) { const l = list.filter((e) => e.driverId === d.id); if (l.length) rows.push([d.name, TYPES[d.type], d.depot, d.fd || "", ...row(agg(l))]); }
-    rows.push(["Total", "", "", "", ...row(agg(list))], [], ["Method", ...H]);
-    for (const m of Object.keys(METHODS)) rows.push([METHODS[m], ...row(agg(list.filter((e) => e.method === m)))]);
-    rows.push([], ["Depot", ...H]);
-    for (const d of [...new Set(list.map((e) => e.depot))]) rows.push([d, ...row(agg(list.filter((e) => e.depot === d)))]);
-    rows.push([], ["Van", ...H]);
-    for (const v of [...new Set(list.map((e) => e.van).filter(Boolean))].sort()) rows.push([v, ...row(agg(list.filter((e) => e.van === v)))]);
+    const { days } = enrich(S.charges);
+    const dl = scopeDays(ui.scope, days.filter(inRange(a, b)));
+    const H = ["Home days", "Public days", "Days over credit", "Charges", "Spend", "Home allowance", "Business covers", "Off wages", "Cost to business"];
+    const row = (t) => [t.homeDays, t.publicDays, t.overDays, t.n, t.spend.toFixed(2), t.allow.toFixed(2), t.covered.toFixed(2), t.ded.toFixed(2), t.biz.toFixed(2)];
+    const rows = [["EV charging report", scopeName(ui.scope), `${a} to ${b}`], [], ["Driver", "Depot", ...H]];
+    for (const d of sortDrivers(S.drivers)) { const l = dl.filter((g) => g.driverId === d.id); if (l.length) rows.push([d.name, d.depot, ...row(aggDays(l))]); }
+    rows.push(["Total", "", ...row(aggDays(dl))], [], ["Depot", ...H]);
+    for (const d of [...new Set(dl.map((g) => g.depot))]) rows.push([d, ...row(aggDays(dl.filter((g) => g.depot === d)))]);
     rows.push([], ["Date", ...H]);
-    for (let d = a; d <= b; d = addDays(d, 1)) rows.push([d, ...row(agg(list.filter((e) => e.date === d)))]);
+    for (let d = a; d <= b; d = addDays(d, 1)) rows.push([d, ...row(aggDays(dl.filter((g) => g.date === d)))]);
     saveCsv(rows, `ev-charging-report-${ui.view}-${a}.csv`, $("dashMsg"));
   }
 
@@ -1156,37 +1055,30 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     $("dDepot").innerHTML = deps.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
     if (cur && deps.includes(cur)) $("dDepot").value = cur;
     const list = sortDrivers(S.drivers);
-    $("drvList").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Charges at</th><th class="l">Depot</th><th class="l">FD</th><th class="l">Usual van</th><th class="l">Status</th><th></th></tr></thead>` +
-      (list.length ? `<tbody>${list.map((d) => `<tr class="${d.active === false ? "dim" : ""}"><td class="l name">${esc(d.name)}</td><td class="l">${typeChip(d.type)}</td><td class="l">${esc(d.depot)}</td><td class="l">${esc(d.fd || "")}</td><td class="l">${esc(d.van || "")}</td><td class="l">${d.active === false ? "Inactive" : "Active"}</td>
+    $("drvList").innerHTML = `<thead><tr><th class="l">Driver</th><th class="l">Depot</th><th class="l">Status</th><th></th></tr></thead>` +
+      (list.length ? `<tbody>${list.map((d) => `<tr class="${d.active === false ? "dim" : ""}"><td class="l name">${esc(d.name)}</td><td class="l">${esc(d.depot)}</td><td class="l">${d.active === false ? "Inactive" : "Active"}</td>
         <td><div class="rowbtns">${S.canWrite ? `<button type="button" class="mini" data-dedit="${esc(d.id)}">Edit</button><button type="button" class="mini" data-ddel="${esc(d.id)}">Delete</button>` : ""}</div></td></tr>`).join("")}</tbody>`
-        : emptyTbody(7, S.db && !S.driversLoaded ? "Loading…" : "No drivers yet. Add your first one below."));
+        : emptyTbody(4, S.db && !S.driversLoaded ? "Loading…" : "No drivers yet. Add your first one below."));
     renderRuleSummary();
   }
   function fillRulesForm() {
     const s = S.settings;
-    $("rCap").value = s.publicCap; $("rHome").value = s.homeAllowance; $("rTariff").value = s.homeTariff;
-    $("rStart").value = s.periodStart; $("rRoute").value = s.onRouteRule || "cap";
+    $("rCap").value = s.publicCap; $("rHome").value = s.homeAllowance; $("rStart").value = s.periodStart;
     $("rDepots").value = (s.depots || []).join(", "); $("rPayHome").checked = s.payHomeViaWages !== false;
     renderRuleSummary();
   }
   function renderRuleSummary() {
     const s = S.settings;
-    $("ruleLine").textContent = `Public charging: business covers up to ${money(s.publicCap)} a day · Home charging: ${money(s.homeAllowance)} a day · Pay period starts ${shortD(periodInfo(todayS()).start)}`;
-    const capLess = Math.max(0, num(s.publicCap) - num(s.homeAllowance));
-    const route = { cap: `the business covers on-route charging up to ${money(s.publicCap)} that day, the rest comes off wages`, capLess: `the business covers on-route charging up to ${money(capLess)} that day, the rest comes off wages`, business: "the business pays all of it", driver: "all of it comes off wages" }[s.onRouteRule || "cap"];
-    $("ruleSummary").innerHTML = `<p><b>Public-charging drivers:</b> the business covers up to ${money(s.publicCap)} a day. Anything over comes off their wages. Spending less earns nothing.</p>
-      <p><b>Home-charging drivers:</b> a flat ${money(s.homeAllowance)} for each home-charging day, whatever they use${s.payHomeViaWages !== false ? ", paid through wages" : ""}.</p>
-      <p><b>Home-charging driver charging on route:</b> ${route}. The ${money(s.homeAllowance)} home allowance is still paid.</p>`;
+    $("ruleLine").textContent = `Home-charged day: ${money(s.homeAllowance)} flat · Public day: business covers up to ${money(s.publicCap)} · Pay period starts ${shortD(periodInfo(todayS()).start)}`;
+    $("ruleSummary").innerHTML = `<p><b>Day the driver home-charged:</b> a flat ${money(s.homeAllowance)}${s.payHomeViaWages !== false ? ", paid through wages" : ""}. Any other charging that day (public or on route) is paid back by the driver in full. Cost to the business: ${money(s.homeAllowance)}.</p>
+      <p><b>Day with no home charge:</b> a ${money(s.publicCap)} credit for public and on-route charging. Anything over comes off their wages, so a ${money(31)} day means ${money(Math.max(0, 31 - num(s.publicCap)))} off wages. Spending less earns nothing. Cost to the business: up to ${money(s.publicCap)}.</p>`;
   }
 
-  function resetDriverForm() {
-    $("drvForm").reset(); $("dActive").checked = true; ui.editingDriver = null;
-    $("dSubmit").textContent = "Add driver"; $("dCancel").hidden = true;
-  }
+  function resetDriverForm() { $("drvForm").reset(); $("dActive").checked = true; ui.editingDriver = null; $("dSubmit").textContent = "Add driver"; $("dCancel").hidden = true; }
   function editDriver(id) {
     const d = driverById(id); if (!d) return;
     ui.editingDriver = id;
-    $("dName").value = d.name; $("dType").value = d.type; $("dDepot").value = d.depot; $("dFd").value = d.fd || ""; $("dVan").value = d.van || ""; $("dActive").checked = d.active !== false;
+    $("dName").value = d.name; $("dDepot").value = d.depot; $("dActive").checked = d.active !== false;
     $("dSubmit").textContent = "Save driver"; $("dCancel").hidden = false; setMsg($("dMsg"), "");
     $("drvForm").scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -1195,21 +1087,21 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     const msg = $("dMsg");
     if (!S.db) { setMsg(msg, "Saving isn't available here.", "err"); return; }
     const name = $("dName").value.trim().replace(/\s+/g, " ");
-    if (!name || !$("dDepot").value) { setMsg(msg, "Add the driver's name and depot. Add depots under the rules below if the list is empty.", "err"); return; }
+    if (!name || !$("dDepot").value) { setMsg(msg, "Add the driver's name and depot. If the depot list is empty, add depots under the rules below.", "err"); return; }
     const dup = S.drivers.find((d) => d.id !== ui.editingDriver && d.name.toLowerCase() === name.toLowerCase());
     if (dup) { setMsg(msg, `${dup.name} is already on the list. Edit that driver instead.`, "err"); return; }
-    const doc = { name, type: $("dType").value, depot: $("dDepot").value, fd: $("dFd").value.trim(), van: normReg($("dVan").value), active: $("dActive").checked };
+    const doc = { name, depot: $("dDepot").value, active: $("dActive").checked };
     $("dSubmit").disabled = true;
     try {
       if (ui.editingDriver) await S.db.collection("drivers").doc(ui.editingDriver).set(doc); else await S.db.collection("drivers").add(doc);
-      setMsg(msg, `Saved ${name}.${ui.editingDriver ? " Charges already logged keep the type and depot they were saved with." : ""}`, "ok");
+      setMsg(msg, `Saved ${name}.`, "ok");
       resetDriverForm();
     } catch (err) { setMsg(msg, writeErr(err), "err"); }
     finally { $("dSubmit").disabled = !S.canWrite; }
   }
   async function deleteDriver(btn) {
     const d = driverById(btn.dataset.ddel); if (!d) return;
-    if (!arm(btn)) { setMsg($("dMsg"), `Deleting ${d.name} keeps their logged charges. To hide them from lists instead, edit and untick Active.`, ""); return; }
+    if (!arm(btn)) { setMsg($("dMsg"), `Deleting ${d.name} keeps their logged charging. To hide them from lists instead, edit and untick Active.`, ""); return; }
     btn.disabled = true;
     try { await S.db.collection("drivers").doc(d.id).delete(); setMsg($("dMsg"), `Deleted ${d.name}.`, "ok"); }
     catch (err) { btn.disabled = false; setMsg($("dMsg"), "Couldn't delete. Try again.", "err"); }
@@ -1218,14 +1110,13 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     e.preventDefault();
     const msg = $("rMsg");
     if (!S.db) { setMsg(msg, "Saving isn't available here.", "err"); return; }
-    const nums = ["rCap", "rHome", "rTariff"].map((id) => parseFloat($(id).value));
-    const start = $("rStart").value;
+    const cap = parseFloat($("rCap").value), home = parseFloat($("rHome").value), start = $("rStart").value;
     const depots = [...new Set($("rDepots").value.split(",").map((x) => x.trim()).filter(Boolean))];
-    if (!nums.every((n) => Number.isFinite(n) && n >= 0) || !start || !depots.length) { setMsg(msg, "Fill in every amount, the start date and at least one depot.", "err"); return; }
+    if (![cap, home].every((n) => Number.isFinite(n) && n >= 0) || !start || !depots.length) { setMsg(msg, "Fill in both amounts, the start date and at least one depot.", "err"); return; }
     $("saveRules").disabled = true;
     try {
-      await S.db.doc("settings/main").set({ publicCap: nums[0], homeAllowance: nums[1], homeTariff: nums[2], periodStart: start, onRouteRule: $("rRoute").value, depots, payHomeViaWages: $("rPayHome").checked });
-      setMsg(msg, "Rules saved. They apply to charges you log from now on.", "ok");
+      await S.db.doc("settings/main").set({ publicCap: cap, homeAllowance: home, periodStart: start, depots, payHomeViaWages: $("rPayHome").checked });
+      setMsg(msg, "Rules saved. They apply to charging you log from now on.", "ok");
     } catch (err) { setMsg(msg, writeErr(err), "err"); }
     finally { $("saveRules").disabled = !S.canWrite; }
   }
@@ -1239,7 +1130,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     clearTimeout(slowTimer);
     slowTimer = setTimeout(() => banner("The charging log can't be reached right now. Figures may be out of date."), 10000);
     const off = query.onSnapshot((snap) => {
-      clearTimeout(slowTimer); banner("");
+      clearTimeout(slowTimer); if (!S.local) banner("");
       onData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       render();
     }, () => { clearTimeout(slowTimer); banner("The charging log stopped updating. Reload the page to reconnect."); });
@@ -1248,8 +1139,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   function syncSubs() {
     if (!S.db) return;
     const p = periodInfo(ui.date);
-    // load the averages window (and a 4-week lookback for mileage gaps)
-    const a = addDays(p.start, -28 * Math.max(ui.avgN - 1, 0) - 28), b = p.end;
+    const a = addDays(p.start, -28 * Math.max(ui.avgN - 1, 0) - 28), b = p.end; // extra 4 weeks back for mileage gaps
     const sig = a + "|" + b;
     if (!subs.charges || subs.charges.sig !== sig) S.chargesLoaded = false;
     listen("charges", sig, S.db.collection("charges").where("date", ">=", a).where("date", "<=", b), (rows) => { S.charges = rows; S.chargesLoaded = true; });
@@ -1259,21 +1149,20 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
 
   // Browser-only store, used when the page is opened outside claude.ai. Same calls as the claude.ai database.
   function localDb() {
-    const KEY = "ev-charging-log-v1";
+    const KEY = "ev-charging-log-v2";
     let data = { charges: {}, drivers: {}, settings: {} };
     try { const raw = localStorage.getItem(KEY); if (raw) data = Object.assign(data, JSON.parse(raw)); } catch (_) {}
     const ls = new Set();
     const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {} ls.forEach((f) => f()); };
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const docSnap = (id, v) => ({ id, exists: !!v, data: () => (v ? { ...v } : undefined) });
-    const ops = { "==": (a, b) => a === b, ">=": (a, b) => a >= b, "<=": (a, b) => a <= b, ">": (a, b) => a > b, "<": (a, b) => a < b };
+    const ops = { "==": (a, b) => a === b, ">=": (a, b) => a >= b, "<=": (a, b) => a <= b };
     function query(coll, filters) {
       return {
         where: (f, op, v) => query(coll, filters.concat([[f, op, v]])),
         onSnapshot(next) {
-          const run = () => next({ docs: Object.entries(data[coll] || {}).filter(([, v]) => filters.every(([f, op, x]) => ops[op](v[f], x))).map(([id, v]) => docSnap(id, v)), metadata: { fromCache: false } });
-          ls.add(run); setTimeout(run, 0);
-          return () => ls.delete(run);
+          const run = () => next({ docs: Object.entries(data[coll] || {}).filter(([, v]) => filters.every(([f, op, x]) => ops[op](v[f], x))).map(([id, v]) => docSnap(id, v)) });
+          ls.add(run); setTimeout(run, 0); return () => ls.delete(run);
         },
       };
     }
@@ -1296,13 +1185,8 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     else if (ui.tab === "averages") renderAverages();
     else if (ui.tab === "entries") renderEntries();
     else if (ui.tab === "settings") renderSettings();
-    fillLists();
-  }
-  function fillLists() {
     const uniq = (arr) => [...new Map(arr.filter(Boolean).map((v) => [String(v).trim().toLowerCase(), String(v).trim()])).values()].sort();
-    const all = S.charges.concat(S.day);
-    $("dlVans").innerHTML = uniq(all.map((c) => normReg(c.van)).concat(S.drivers.map((d) => normReg(d.van)))).map((v) => `<option value="${esc(v)}">`).join("");
-    $("dlPoints").innerHTML = uniq(all.map((c) => c.point)).map((v) => `<option value="${esc(v)}">`).join("");
+    $("dlPoints").innerHTML = uniq(S.charges.concat(S.day).map((c) => c.point)).map((v) => `<option value="${esc(v)}">`).join("");
   }
   function showTab(tab) {
     ui.tab = tab;
@@ -1323,7 +1207,7 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   $("dashDate").addEventListener("change", (e) => { if (e.target.value) setDash({ date: e.target.value }); });
   $("scopeSel").addEventListener("change", (e) => setDash({ scope: e.target.value }));
   $("exportReportBtn").addEventListener("click", exportReport);
-  for (const id of ["driverTable", "methodTable", "depotTable", "vanTable"]) $(id).addEventListener("click", (e) => {
+  for (const id of ["driverTable", "methodTable", "depotTable"]) $(id).addEventListener("click", (e) => {
     const tr = e.target.closest("tr[data-scope]"); if (!tr) return;
     setDash({ scope: ui.scope === tr.dataset.scope ? "ALL" : tr.dataset.scope }); window.scrollTo({ top: 0, behavior: "smooth" });
   });
@@ -1333,12 +1217,12 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  const setLogDate = (d) => { ui.logDate = d; if (!ui.editing) $("fDate").value = d; setMsg($("homeMsg"), ""); syncSubs(); render(); };
+  const setLogDate = (d) => { if (ui.editing) resetForm(); ui.logDate = d; setMsg($("homeMsg"), ""); syncSubs(); render(); };
   $("fDate").addEventListener("change", (e) => { if (e.target.value && !ui.editing) setLogDate(e.target.value); else updatePreview(); });
   $("logPrev").addEventListener("click", () => setLogDate(addDays(ui.logDate, -1)));
   $("logNext").addEventListener("click", () => setLogDate(addDays(ui.logDate, 1)));
-  $("fDriver").addEventListener("change", onDriverPick);
-  for (const id of ["fCost", "fKwh", "mHome", "mPublic", "mRoute"]) $(id).addEventListener(id.startsWith("m") ? "change" : "input", updatePreview);
+  $("fDriver").addEventListener("change", updatePreview);
+  $("fCost").addEventListener("input", updatePreview);
   $("chargeForm").addEventListener("submit", saveCharge);
   $("cancelEdit").addEventListener("click", () => { resetForm(); setMsg($("formMsg"), ""); });
   $("saveHome").addEventListener("click", saveHomeDays);
@@ -1353,12 +1237,10 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
   $("wExportWages").addEventListener("click", exportWages);
   $("wExportPnl").addEventListener("click", exportPnl);
   $("wCopy").addEventListener("click", copySummary);
-
   $("avgRange").addEventListener("change", (e) => { ui.avgN = Number(e.target.value) || 1; try { localStorage.setItem("ev-avg", String(ui.avgN)); } catch (_) {} syncSubs(); render(); });
   $("aPrev").addEventListener("click", () => setPeriod(-1));
   $("aNext").addEventListener("click", () => setPeriod(1));
   $("aToday").addEventListener("click", () => { ui.date = todayS(); syncSubs(); render(); });
-
   $("ePrev").addEventListener("click", () => setPeriod(-1));
   $("eNext").addEventListener("click", () => setPeriod(1));
   $("eScope").addEventListener("change", (e) => { ui.eScope = e.target.value; render(); });
@@ -1367,7 +1249,6 @@ td.wrapcell { white-space: normal; min-width: 260px; color: var(--muted); text-a
     const ed = e.target.closest("[data-edit]"); if (ed) return startEdit(ed.dataset.edit);
     const del = e.target.closest("[data-del]"); if (del) return deleteCharge(del, $("eMsg"));
   });
-
   $("drvForm").addEventListener("submit", submitDriver);
   $("dCancel").addEventListener("click", () => { resetDriverForm(); setMsg($("dMsg"), ""); });
   $("drvList").addEventListener("click", (e) => {

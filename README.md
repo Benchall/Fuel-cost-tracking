@@ -4,34 +4,34 @@ A single web page (`index.html`) for logging EV charging for the DPD vans. It is
 
 The page is published as a claude.ai Artifact, which stores the log in its own database. If you open `index.html` straight from this repo instead, it saves to that browser only.
 
-## What each charge records
+## What is recorded
 
-Date, driver, van reg, charging method (home / public / on route), charge point or network, kWh, cost (£) and mileage (odometer reading).
+- **Home charging:** tick each driver who charged at home that day. Nothing else is needed.
+- **Public and on-route charges:** date, driver, method (public / on route), charge point or network, cost (£) and mileage (odometer).
 
 ## Allowance rules
 
-Each driver is set up as **public-charging** or **home-charging** under *Drivers & rules*.
+Worked out per driver per day from everything they charged that day:
 
-- **Public-charging drivers:** the business covers up to **£20 a day**. Anything over £20 is taken off their wages. If they spend less than £20, they don't keep the difference.
-- **Home-charging drivers:** a flat **£10 a day** for each home-charging day, whatever they use. Tick these days under *Log charges → Home-charging days*.
-- **Home-charging driver who has to charge on route:** you choose the rule under *Drivers & rules*. The default is: the business covers on-route charging up to the £20 daily cap, the driver pays the rest, and the £10 home allowance is still paid. The other choices are cap minus the home allowance, business pays it all, or driver pays it all.
+- **Home-charged day:** a flat **£10**. Any other charging that day (public or on route) is paid back by the driver in full. Cost to the business: £10.
+- **Day with no home charge:** a **£20 credit** for public and on-route charging. Anything over comes off their wages, so a £31 day means £11 off wages. Spending less earns nothing. Cost to the business: up to £20.
 
-The rules are worked out per driver per day from all of that day's charges. Each charge keeps the rules it was saved with, so changing a rate later doesn't change past figures.
+Both amounts can be changed under *Drivers & rules*. Each charge keeps the amounts it was saved with, so changing them later doesn't change past days.
 
 ## Views
 
-- **Dashboard:** daily, weekly and 4-week pay period totals, filtered to all drivers, a depot, a charging method, a driver or a van. Tables by driver, method, depot, van and charge point / network (cheapest per kWh first), plus week by week and day by day.
-- **Log charges:** the charge form with a live preview of the allowance for that driver's day, home-charging days, and the day's charges with the allowance worked out per driver.
-- **Wage deductions:** per driver for the pay period: deductions for each week, days over the cap, home days, home allowance and net to wages, plus every day with a deduction and why.
-- **Averages:** over this pay period, or the last 3, 6 or 13. Averages per driver, depot, method, driver type and van, and a pay-period-by-pay-period trend: cost to business per driver-day, spend and kWh per charge, £ per kWh, £ per mile, miles per kWh, and how often public drivers go over the cap.
-- **All charges:** every charge in a pay period, with edit, delete and CSV download.
+- **Dashboard:** daily, weekly and 4-week pay period totals, filtered to all drivers, a depot, a charging method or a driver. Tables by driver, method, depot and charge point / network, plus week by week and day by day.
+- **Log charges:** tick who home-charged, log public and on-route charges with a live preview of the driver's day, and see the allowance worked out per driver.
+- **Wage deductions:** per driver for the pay period: deductions for each week, home and public days, home allowance, net to wages and cost to the business, plus every day with a deduction and why.
+- **Averages:** over this pay period, or the last 3, 6 or 13. Per driver, depot and method, home-charged days against public days, and a pay-period trend.
+- **All charges:** everything in a pay period, with edit, delete and CSV download.
 
 ## Feeding the Driver Pay Log and the P&L
 
 On *Wage deductions*:
 
-- **Download for Driver Pay Log:** one line per driver per day. Deductions are type *Fuel over allowance* (a charge off pay). If "Pay the home allowance through wages" is ticked, home days are type *Top up*. Add them in the pay log under "Add a charge or payment". Driver names must match the pay log.
-- **Download for P&L:** the cost to the business for each FD for each day, for the *Charging £* box on the P&L daily entry. Give each driver their FD number under *Drivers & rules*. This figure already takes off what drivers pay back and includes the home allowance.
+- **Download for Driver Pay Log:** one line per driver per day. Deductions are type *Fuel over allowance*. If "Pay the home allowance through wages" is ticked, home-charged days are type *Top up*. Driver names must match the pay log.
+- **Download for P&L:** the cost to the business for each driver for each day, for the *Charging £* box on the P&L daily entry.
 - **Copy summary:** a short per-driver text summary for the pay period.
 
 ## Pay period
